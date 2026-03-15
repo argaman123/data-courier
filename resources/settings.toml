@@ -1,0 +1,13 @@
+[default]
+buffer_size = 256_000_000
+
+batch_size = 500 # not really need to be modified
+network_speed = 100_000_000 # 100MBs
+chunk_size = 1_400 # why that specifically?
+passes = 3
+
+ip = '127.0.0.1'
+port = 55555
+
+input_folder = 'tests/input'
+output_folder = 'tests/output'

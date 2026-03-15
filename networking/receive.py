@@ -38,7 +38,7 @@ class Receiver:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, settings.buffer_size)
         self.sock.bind((settings.ip, settings.port))
-        self.processing: dict[int, PartialFile] = {}
+        self.processing: dict[bytes, PartialFile] = {}
 
     def save_files(self):
         logging.info(f"Saving all completed files")
@@ -51,7 +51,7 @@ class Receiver:
                 progress = ""
                 if partial_file.header is not None:
                     progress = f" ({len(partial_file.chunks)}/{partial_file.header.index})"
-                logging.warning(f"Skipping file [{file_id}]" + progress)
+                logging.warning(f"Skipping file [{file_id.hex()}]" + progress)
             self.processing.pop(file_id)
 
     def start(self):

@@ -1,8 +1,8 @@
 # Tasks
 
-- [ ]  UDP send-receive *argaman*
+- [x]  UDP send-receive *argaman*
 - [ ]  Error correction *muf*
 - [ ]  Folder monitoring
 - [ ]  Prioritising *muf*
-- [ ]  File parsing
+- [ ]  File parsing *argaman*
 - [ ]  Threads and pools *muf*

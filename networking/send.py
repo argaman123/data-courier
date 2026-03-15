@@ -49,5 +49,6 @@ if __name__ == "__main__":
         if filepath.is_file():
             path = filepath.relative_to(input_folder)
             sender.send_file(File(str(path), filepath.read_bytes()))
+
     logging.info(f"Finished sending all files in {input_folder}, sending save signal")
-    sender.send_packet(Packet(bytes(), 2, 0, bytes()))
+    sender.send_packet(Packet(bytes(), 2, 0, bytes())) # TODO FOR TESTING

@@ -1,37 +1,10 @@
 import logging
 import socket
+from pathlib import Path
 
 from config import settings
-from networking.objects import Packet, File
-
-
-class PartialFile:
-    def __init__(self):
-        self.header: Packet | None = None
-        self.chunks: dict[int, Packet] = {}
-        self.complete: bool = False
-
-    def to_file(self) -> File:
-        return File(self.header.payload.decode('utf-8'),
-                    b''.join(self.chunks[i].payload for i in range(len(self.chunks))), self.header.id)
-
-    def process(self, packet: Packet) -> bool:
-        if self.complete: return False
-
-        match packet.type:
-            case 0:
-                self.header = packet
-            case 1:
-                self.chunks[packet.index] = packet
-            case 2: # TODO FOR TESTING
-                return True
-
-        if self.header is not None and self.header.index == len(self.chunks):
-            self.complete = True
-            logging.info(f"Finished receiving file [{packet.id.hex()}]")
-
-        return False
-
+from networking.objects.packet import Packet
+from networking.objects.partial_file import PartialFile
 
 class Receiver:
     def __init__(self):
@@ -45,7 +18,7 @@ class Receiver:
         for file_id, partial_file in self.processing.copy().items():
             if partial_file.complete:
                 file = partial_file.to_file()
-                file.save(settings.output_folder)
+                file.save(str('..' / Path(settings.output_folder)))
                 logging.info(f"Saved file {file.path}")
             else:
                 progress = ""

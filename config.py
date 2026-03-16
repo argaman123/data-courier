@@ -11,7 +11,7 @@ settings = Dynaconf(
 
 # Configure it once at the top of your file
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=settings.log_level,
     format="%(asctime)s.%(msecs)03d [%(levelname)s] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S"
 )

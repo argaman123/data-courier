@@ -1,4 +1,6 @@
 [default]
+ip = '192.168.1.241'
+port = 55555
 buffer_size = 256_000_000
 
 batch_size = 100 # magic number?
@@ -6,8 +8,7 @@ network_speed = 12_500_000 # 100Mbps
 chunk_size = 1_400 # below ip fragmantation
 passes = 1
 
-ip = '127.0.0.1'
-port = 55555
+log_level = 'INFO'
 
 input_folder = 'tests/input'
 output_folder = 'tests/output'

@@ -1,3 +1,4 @@
+import gc
 import logging
 import socket
 from pathlib import Path
@@ -18,7 +19,7 @@ class Receiver:
         for file_id, partial_file in self.processing.copy().items():
             if partial_file.complete:
                 file = partial_file.to_file()
-                file.save(str('..' / Path(settings.output_folder)))
+                file.save(str(Path(settings.output_folder)))
                 logging.info(f"Saved file {file.path}")
             else:
                 progress = ""
@@ -29,7 +30,6 @@ class Receiver:
 
     def start(self):
         logging.info(f"Listening on {settings.ip}:{settings.port}")
-
         while True:
             packet = Packet.from_bytes(self.sock.recvfrom(2048)[0]) # bigger than 1413, and power of 2
             if packet.id not in self.processing:

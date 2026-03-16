@@ -1,7 +1,7 @@
 [default]
 buffer_size = 256_000_000
 
-batch_size = 500 # not really need to be modified
+batch_size = 100 # magic number?
 network_speed = 12_500_000 # 100Mbps
 chunk_size = 1_400 # below ip fragmantation
 passes = 1

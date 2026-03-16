@@ -34,7 +34,7 @@ if __name__ == "__main__":
     global_time = time.perf_counter()
     total_bytes = 0
     from pathlib import Path
-    input_folder = '..' / Path(settings.input_folder)
+    input_folder = Path(settings.input_folder)
     for filepath in input_folder.rglob('*'):
         if filepath.is_file():
             path = filepath.relative_to(input_folder)

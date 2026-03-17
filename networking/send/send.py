@@ -18,14 +18,15 @@ class Sender:
         if not immediate: self.pacer.wait_if_needed()
 
     def send_file(self, file: File):
-        chunks = [(i, file.bytes[i:i + settings.chunk_size]) for i in range(0, len(file.bytes), settings.chunk_size)]
+        raw_bytes = memoryview(file.bytes)
+        chunks = [(i, raw_bytes[i:i + settings.chunk_size]) for i in range(0, len(raw_bytes), settings.chunk_size)]
         logger.info(f"Sending {file} ({len(chunks)} chunks)")
         for pass_num in range(settings.passes):
             start_time = time.perf_counter()
             self.send_packet(Header.from_file(file))
             for offset, payload in chunks:
-                self.send_packet(Payload(file.id, offset, len(file.bytes), payload))
-            logger.info(f"Sent {file} (pass {pass_num + 1}/{settings.passes}) at {(1/((time.perf_counter() - start_time)/len(file.bytes)))/1_000_000:.1f}MB/s")
+                self.send_packet(Payload(file.id, offset, len(raw_bytes), payload.tobytes()))
+            logger.info(f"Sent {file} (pass {pass_num + 1}/{settings.passes}) at {(1/((time.perf_counter() - start_time)/len(raw_bytes)))/1_000_000:.1f}MB/s")
 
 
 if __name__ == "__main__":

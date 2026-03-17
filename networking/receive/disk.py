@@ -1,5 +1,4 @@
-import threading
-import queue
+import os, threading, queue
 from pathlib import Path
 
 from config import settings, logger
@@ -20,6 +19,7 @@ class DiskThread(threading.Thread):
             logger.info(f"Parsing {partial_file}")
             file = partial_file.to_file()
             logger.info(f"Started saving {file}")
-            file.save(str(Path(settings.output_folder)))
+            with open(os.path.join(str(Path(settings.output_folder)), file.path), 'wb') as f:
+                f.write(file.bytes)
             logger.info(f"Saved {file}")
             self.files.task_done()

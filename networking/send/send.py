@@ -18,14 +18,14 @@ class Sender:
         if not immediate: self.pacer.wait_if_needed()
 
     def send_file(self, file: File):
-        chunks = [file.bytes[i:i + settings.chunk_size] for i in range(0, len(file.bytes), settings.chunk_size)]
+        chunks = [(i, file.bytes[i:i + settings.chunk_size]) for i in range(0, len(file.bytes), settings.chunk_size)]
         logger.info(f"Sending {file} ({len(chunks)} chunks)")
         for pass_num in range(settings.passes):
             start_time = time.perf_counter()
-            self.send_packet(Header(file.id, len(chunks), file.path))
-            for index, payload in enumerate(chunks):
-                self.send_packet(Payload(file.id, index, payload))
-            logger.info(f"Sent {file} {pass_num + 1}/{settings.passes} at {(1/((time.perf_counter() - start_time)/len(file.bytes)))/1_000_000:.1f}MB/s")
+            self.send_packet(Header.from_file(file))
+            for offset, payload in chunks:
+                self.send_packet(Payload(file.id, offset, len(file.bytes), payload))
+            logger.info(f"Sent {file} (pass {pass_num + 1}/{settings.passes}) at {(1/((time.perf_counter() - start_time)/len(file.bytes)))/1_000_000:.1f}MB/s")
 
 
 if __name__ == "__main__":
@@ -41,5 +41,5 @@ if __name__ == "__main__":
             file_bytes = filepath.read_bytes()
             total_bytes += len(file_bytes)
             sender.send_file(File(str(path), file_bytes))
-    logger.info(f"Finished sending all files in {input_folder} at {(1/((time.perf_counter() - global_time)/total_bytes))/1_000_000:.1f}MB/s, sending save signal")
+    logger.success(f"Finished sending all files in {input_folder} at {(1/((time.perf_counter() - global_time)/total_bytes))/1_000_000:.1f}MB/s")
     sender.send_packet(End())

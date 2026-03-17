@@ -1,7 +1,8 @@
-import socket
+import hashlib, socket
+from pathlib import Path
 
-from config import settings, logger
-from networking.objects.packet import Packet
+from config import (settings, logger)
+from networking.objects.packet import Packet, End
 from networking.objects.partial_file import PartialFile
 from networking.receive.disk import DiskThread
 
@@ -13,15 +14,29 @@ class Receiver:
         self.processing: dict[bytes, PartialFile] = {}
         self.disk_thread = DiskThread()
 
-    # TODO TESTING ONLY
+    # TODO REMOVE TESTS IN PRODUCTION
     def test_and_reset(self):
+        self.disk_thread.files.join()
+        error = False
+        logger.info("Verifying file integrity, and checking for missing packets")
         for key, file in self.processing.copy().items():
-            if not file.complete:
-                progress = ""
-                if self.processing[key].header is not None:
-                    progress = f" ({len(self.processing[key].chunks)}/{self.processing[key].header.index})"
-                logger.warning(f"Dropping {key.hex()}" + progress)
+            if key == End.default_id():
+                pass
+            elif file.complete:
+                actual_file = Path(Path(settings.output_folder)) / Path(file.header.path)
+                checksum = hashlib.blake2b(actual_file.read_bytes()).digest()
+                if checksum != file.header.checksum:
+                    logger.error(f"File is malformed {file.header.path} [{checksum.hex()} != {file.header.checksum.hex()}]")
+                    error = True
+                actual_file.unlink()
+            else:
+                logger.error(f"Packets are missing {key.hex()} {file.data}")
+                error = True
             self.processing.pop(key)
+        if error:
+            logger.error(f"Test failed")
+        else:
+            logger.success("All files arrived fully!")
 
     def start(self):
         logger.info(f"Listening on {settings.ip}:{settings.port}")

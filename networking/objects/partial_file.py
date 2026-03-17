@@ -1,31 +1,29 @@
-from typing import cast
-
 from networking.objects.file import File
 from networking.objects.packet import Packet, Header, End, Payload
 from config import logger
+from networking.objects.partial_bytearray import PartialByteArray
 
 
 class PartialFile:
     def __init__(self):
         self.header: Header | None = None
-        self.chunks: dict[int, bytes] = {}
+        self.data = PartialByteArray()
         self.complete: bool = False
 
     def to_file(self) -> File:
-        return File(self.header.payload.decode('utf-8'),
-                    b''.join(self.chunks[i] for i in range(len(self.chunks))), self.header.id)
+        return File(self.header.path, self.data.to_bytes(), self.header.id)
 
     def process(self, packet: Packet) -> bool:
         if self.complete: return False
 
         if packet.type == Header.default_type():
-            self.header = cast(Header, packet)
+            self.header = Header.from_packet(packet)
         elif packet.type == Payload.default_type():
-            self.chunks[packet.index] = packet.payload
+            self.data.insert(packet)
         elif packet.type == End.default_type():
             return True
 
-        if self.header is not None and self.header.index == len(self.chunks):
+        if self.header is not None and self.data.is_complete():
             self.complete = True
             logger.info(f"Finished receiving {self}")
 

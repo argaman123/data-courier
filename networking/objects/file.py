@@ -13,3 +13,6 @@ class File:
     def save(self, folder: str):
         with open(os.path.join(folder, self.path), 'wb') as f:
             f.write(self.bytes)
+
+    def __str__(self):
+        return self.path + f" [{self.id.hex()}]"

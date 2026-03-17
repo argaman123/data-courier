@@ -29,4 +29,4 @@ class PartialByteArray:
         return self.bytearray
 
     def __str__(self):
-        return f"({self.bytes_received} / {self.file_size})"
+        return f"({self.bytes_received // settings.chunk_size} / {self.file_size // settings.chunk_size})"

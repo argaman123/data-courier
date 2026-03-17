@@ -4,7 +4,8 @@ port = 55555
 buffer_size = 256_000_000
 
 batch_size = 100 # magic number?
-network_speed = 12_500_000 # 100Mbps
+# pacer_target_speed = 12_500_000 # 100Mbps
+pacer_target_speed = false
 chunk_size = 1_400 # below ip fragmantation
 passes = 1
 

@@ -21,7 +21,7 @@ class Receiver:
                 progress = ""
                 if self.processing[key].header is not None:
                     progress = f" ({len(self.processing[key].chunks)}/{self.processing[key].header.index})"
-                logging.warning(f"Dropping {key}" + progress)
+                logging.warning(f"Dropping {key.hex()}" + progress)
             self.processing.pop(key)
 
     def start(self):

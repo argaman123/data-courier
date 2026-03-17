@@ -1,7 +1,6 @@
-import logging
 import socket
 
-from config import settings
+from config import settings, logger
 from networking.objects.packet import Packet
 from networking.objects.partial_file import PartialFile
 from networking.receive.disk import DiskThread
@@ -21,15 +20,15 @@ class Receiver:
                 progress = ""
                 if self.processing[key].header is not None:
                     progress = f" ({len(self.processing[key].chunks)}/{self.processing[key].header.index})"
-                logging.warning(f"Dropping {key.hex()}" + progress)
+                logger.warning(f"Dropping {key.hex()}" + progress)
             self.processing.pop(key)
 
     def start(self):
-        logging.info(f"Listening on {settings.ip}:{settings.port}")
+        logger.info(f"Listening on {settings.ip}:{settings.port}")
         while True:
             packet = Packet.from_bytes(self.sock.recvfrom(2048)[0]) # bigger than 1413, and power of 2
             if packet.id not in self.processing:
-                logging.info(f"Started processing {packet}")
+                logger.info(f"Started processing {packet}")
                 self.processing[packet.id] = PartialFile()
             if self.processing[packet.id].complete:
                 continue

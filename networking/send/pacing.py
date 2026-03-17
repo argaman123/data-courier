@@ -1,7 +1,6 @@
-import logging
 import time
 
-from config import settings
+from config import settings, logger
 
 
 class Pacer:
@@ -9,7 +8,7 @@ class Pacer:
         self.start_time = time.perf_counter()
         self.packets_sent = 0
         self.target_batch_time = (settings.batch_size * settings.chunk_size) / settings.network_speed
-        logging.info(f"Pacer initialized {self.target_batch_time:.3f}s / {settings.batch_size} packets")
+        logger.info(f"Pacer initialized {self.target_batch_time:.3f}s / {settings.batch_size} packets")
 
     def reset(self):
         self.packets_sent = 0

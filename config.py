@@ -1,17 +1,17 @@
-import logging
+import sys
+
+from loguru import logger
 from dynaconf import Dynaconf
 
 settings = Dynaconf(
-    settings_files=["resources/settings.toml"],  # main config file
-    environments=True,                 # enable profiles
-    envvar_prefix="APP"                # optional: override via environment variables
+    settings_files=["resources/settings.toml"],
+    environments=True,
+    envvar_prefix="APP"
 )
 
-
-
-# Configure it once at the top of your file
-logging.basicConfig(
-    level=settings.log_level,
-    format="%(asctime)s.%(msecs)03d [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
-)
+logger.remove()
+logger.add(sys.stdout, colorize=True, level=settings.log_level,
+           format="<green>{time:HH:mm:ss.SSS}</green> | "
+                  "<level>{level}</level> | "
+                  "{message}")
+# logger.add("data-courier.log", colorize=False, rotation="500 MB")

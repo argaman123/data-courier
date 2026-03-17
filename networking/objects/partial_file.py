@@ -1,8 +1,8 @@
-import logging
 from typing import cast
 
 from networking.objects.file import File
 from networking.objects.packet import Packet, Header, End, Payload
+from config import logger
 
 
 class PartialFile:
@@ -27,7 +27,7 @@ class PartialFile:
 
         if self.header is not None and self.header.index == len(self.chunks):
             self.complete = True
-            logging.info(f"Finished receiving {self}")
+            logger.info(f"Finished receiving {self}")
 
         return False
 

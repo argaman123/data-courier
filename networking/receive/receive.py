@@ -19,18 +19,21 @@ class Receiver:
         self.disk_thread.files.join()
         error = False
         logger.info("Verifying file integrity, and checking for missing packets")
-        for key, file in self.processing.copy().items():
+        for key, partial_file in self.processing.copy().items():
             if key == End.default_id():
                 pass
-            elif file.complete:
-                actual_file = Path(Path(settings.output_folder)) / Path(file.header.path)
+            elif partial_file.complete:
+                actual_file = Path(Path(settings.output_folder)) / Path(partial_file.header.path)
                 checksum = hashlib.blake2b(actual_file.read_bytes()).digest()
-                if checksum != file.header.checksum:
-                    logger.error(f"File is malformed {file.header.path} [{checksum.hex()} != {file.header.checksum.hex()}]")
+                if checksum != partial_file.header.checksum:
+                    logger.error(f"File is malformed {partial_file.header.path} [{checksum.hex()} != {partial_file.header.checksum.hex()}]")
                     error = True
                 actual_file.unlink()
             else:
-                logger.error(f"Packets are missing {key.hex()} {file.data}")
+                path = ""
+                if partial_file.header is not None:
+                    path = partial_file.header.path
+                logger.error(f"Packets are missing {path} [{key.hex()}] {partial_file.data}")
                 error = True
             self.processing.pop(key)
         if error:

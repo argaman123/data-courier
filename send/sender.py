@@ -26,7 +26,8 @@ class Sender:
             self.send_packet(Header.from_file(file))
             for offset, payload in chunks:
                 self.send_packet(Payload(file.id, offset, len(raw_bytes), payload.tobytes()))
-            logger.info(f"Sent {file} (pass {pass_num + 1}/{settings.passes}) at {(1/((time.perf_counter() - start_time)/len(raw_bytes)))/1_000_000:.1f}MB/s")
+            logger.info(f"Sent {file} (pass {pass_num + 1}/{settings.passes}) at "
+                        f"{(1/((time.perf_counter() - start_time)/len(raw_bytes))) / (1024 * 1024):.1f}MB/s")
 
 
 if __name__ == "__main__":

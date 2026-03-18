@@ -25,10 +25,9 @@ class MonitoredProcess(multiprocessing.Process, abc.ABC):
         while True:
             time.sleep(self.monitor_rate)
             value = self.bytes_counter.value
-            if value == 0: continue
-            mb_per_sec = value / (1024 * 1024)
             self.bytes_counter.value = 0
-            logger.debug(f"{mb_per_sec:.1f} MB/s")
+            if value == 0: continue
+            logger.debug(f"{value / (1024 * 1024) / self.monitor_rate:.1f} MB/s")
 
     def notify_monitor(self, amount: int):
         if self.enabled:

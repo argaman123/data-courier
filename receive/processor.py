@@ -9,11 +9,12 @@ from pathlib import Path
 from config import (settings, logger)
 from objects.packet import Packet, End
 from objects.partial_file import PartialFile
+from receive.monitor import MonitoredProcess
 from receive.writer import Writer
 from send.pacer import Pacer
 
 
-class Processor(multiprocessing.Process):
+class Processor(MonitoredProcess):
     def __init__(self, _id: str, offset_queue: Queue[tuple[int, int]]):
         super().__init__(name=f"Processor-{_id}", daemon=True)
         self.id = _id
@@ -60,10 +61,11 @@ class Processor(multiprocessing.Process):
             if packet.id not in self.processing:
                 logger.info(f"Started processing {packet}")
                 self.processing[packet.id] = PartialFile()
-            if self.processing[packet.id].complete:
-                continue
-            done = self.processing[packet.id].process(packet)
-            if self.processing[packet.id].complete:
-                self.writer.files.put(self.processing[packet.id])
-            if done:
-                self.test_and_reset()
+            if not self.processing[packet.id].complete:
+                done = self.processing[packet.id].process(packet)
+                if self.processing[packet.id].complete:
+                    self.writer.files.put(self.processing[packet.id])
+                if done:
+                    self.test_and_reset()
+
+            self.notify_monitor(size)

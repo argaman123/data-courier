@@ -6,9 +6,9 @@ from config import settings, logger
 class Pacer:
     def __init__(self):
         if not settings.pacer_target_speed:
-            self.disabled = True
+            self.enabled = False
         else:
-            self.disabled = False
+            self.enabled = True
             self.start_time = time.perf_counter()
             self.packets_sent = 0
             self.batch_size = settings.pacer_batch_size
@@ -20,7 +20,7 @@ class Pacer:
         self.start_time = time.perf_counter()
 
     def wait_if_needed(self):
-        if self.disabled: return
+        if not self.enabled: return
         self.packets_sent += 1
         if self.packets_sent == self.batch_size:
             elapsed_time = time.perf_counter() - self.start_time

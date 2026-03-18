@@ -19,5 +19,5 @@ class Writer(threading.Thread):
             logger.info(f"Started saving {file}")
             with open(os.path.join(str(Path(settings.output_folder)), file.path), 'wb') as f:
                 f.write(file.bytes)
-            logger.info(f"Saved {file}")
+            logger.success(f"Saved {file}")
             self.files.task_done()

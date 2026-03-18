@@ -5,16 +5,16 @@ from multiprocessing import shared_memory
 from multiprocessing.queues import Queue
 from config import settings, logger
 from objects.packet import Payload
+from receive.monitor import MonitoredProcess
 
 
-class Listener(multiprocessing.Process):
+class Listener(MonitoredProcess):
     packet_size = settings.payload_size + Payload.header_size
 
     def __init__(self, _id: str, offset_queue: Queue[tuple[int, int]]):
         super().__init__(name=f"Listener-{_id}", daemon=True)
         self.id = _id
         self.offset_queue = offset_queue
-
 
     def run(self):
         shm = shared_memory.SharedMemory(name=settings.shm_prefix + self.id)
@@ -37,4 +37,4 @@ class Listener(multiprocessing.Process):
             if offset + self.packet_size >= shm.size:
                 offset = 0
 
-
+            self.notify_monitor(size)

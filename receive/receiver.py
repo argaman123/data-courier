@@ -4,7 +4,7 @@ from pathlib import Path
 from config import (settings, logger)
 from objects.packet import Packet, End
 from objects.partial_file import PartialFile
-from receiver.disk import DiskThread
+from receive.disk import DiskThread
 
 class Receiver:
     def __init__(self):

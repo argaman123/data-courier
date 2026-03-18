@@ -17,9 +17,9 @@ class PartialByteArray:
         if self.file_size == 0:
             self.file_size = packet.total_size
             self.bytearray = bytearray(self.file_size)
-            self.arrived = bytearray(math.ceil(self.file_size / settings.chunk_size))
+            self.arrived = bytearray(math.ceil(self.file_size / settings.payload_size))
 
-        index = packet.offset // settings.chunk_size
+        index = packet.offset // settings.payload_size
         if not self.arrived[index]:
             self.bytearray[packet.offset:packet.offset + len(packet.payload)] = packet.payload
             self.bytes_received += len(packet.payload)
@@ -29,4 +29,5 @@ class PartialByteArray:
         return self.bytearray
 
     def __str__(self):
-        return f"({self.bytes_received // settings.chunk_size} / {self.file_size // settings.chunk_size})"
+        return (f"({math.ceil(self.bytes_received / settings.payload_size)} / "
+                f"{math.ceil(self.file_size / settings.payload_size)})")

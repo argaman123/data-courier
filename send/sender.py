@@ -10,7 +10,7 @@ from send.pacer import Pacer
 class Sender:
     def __init__(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, settings.buffer_size)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, settings.socket_buffer_size)
         self.pacer = Pacer()
 
     def send_packet(self, packet: Packet, immediate=False):
@@ -19,7 +19,7 @@ class Sender:
 
     def send_file(self, file: File):
         raw_bytes = memoryview(file.bytes)
-        chunks = [(i, raw_bytes[i:i + settings.chunk_size]) for i in range(0, len(raw_bytes), settings.chunk_size)]
+        chunks = [(i, raw_bytes[i:i + settings.payload_size]) for i in range(0, len(raw_bytes), settings.payload_size)]
         logger.info(f"Sending {file} ({len(chunks)} chunks)")
         for pass_num in range(settings.passes):
             start_time = time.perf_counter()

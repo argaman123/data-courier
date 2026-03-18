@@ -1,15 +1,17 @@
 [default]
+log_level = 'DEBUG'
 ip = '192.168.1.241'
 port = 55555
-buffer_size = 256_000_000
 
-batch_size = 100 # magic number?
-# pacer_target_speed = 12_500_000 # 100Mbps
 pacer_target_speed = false
-chunk_size = 1_400 # below ip fragmantation
+#pacer_target_speed = 12_500_000 # 100Mbps
+pacer_batch_size = 100 # magic number?
+
+socket_buffer_size = 256_000_000
+receiver_buffer_size = 256_000_000
+payload_size = 1_400 # below ip fragmantation
 passes = 1
 
-log_level = 'INFO'
-
+shm_prefix = 'shm_'
 input_folder = 'tests/input'
 output_folder = 'tests/output'

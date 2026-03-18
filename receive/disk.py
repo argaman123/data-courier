@@ -2,7 +2,7 @@ import os, threading, queue
 from pathlib import Path
 
 from config import settings, logger
-from networking.objects.partial_file import PartialFile
+from objects.partial_file import PartialFile
 
 
 class DiskThread(threading.Thread):

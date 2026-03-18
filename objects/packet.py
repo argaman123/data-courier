@@ -1,5 +1,5 @@
 import dataclasses, struct
-from networking.objects.file import File
+from objects.file import File
 
 
 @dataclasses.dataclass

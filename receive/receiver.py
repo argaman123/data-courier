@@ -2,9 +2,9 @@ import hashlib, socket
 from pathlib import Path
 
 from config import (settings, logger)
-from networking.objects.packet import Packet, End
-from networking.objects.partial_file import PartialFile
-from networking.receive.disk import DiskThread
+from objects.packet import Packet, End
+from objects.partial_file import PartialFile
+from receiver.disk import DiskThread
 
 class Receiver:
     def __init__(self):

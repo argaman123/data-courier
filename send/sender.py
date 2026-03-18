@@ -2,9 +2,9 @@ import socket
 import time
 
 from config import settings, logger
-from networking.objects.file import File
-from networking.objects.packet import Packet, Payload, Header, End
-from networking.send.pacing import Pacer
+from objects.file import File
+from objects.packet import Packet, Payload, Header, End
+from send.pacer import Pacer
 
 
 class Sender:

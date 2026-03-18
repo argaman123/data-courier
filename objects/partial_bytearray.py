@@ -1,6 +1,6 @@
 import math
 from config import settings
-from networking.objects.packet import Packet
+from objects.packet import Packet
 
 
 class PartialByteArray:

@@ -1,7 +1,7 @@
-from networking.objects.file import File
-from networking.objects.packet import Packet, Header, End, Payload
+from objects.file import File
+from objects.packet import Packet, Header, End, Payload
 from config import logger
-from networking.objects.partial_bytearray import PartialByteArray
+from objects.partial_bytearray import PartialByteArray
 
 
 class PartialFile:

@@ -27,7 +27,7 @@ class Sender:
             for offset, payload in chunks:
                 self.send_packet(Payload(file.id, offset, len(raw_bytes), payload.tobytes()))
             logger.info(f"Sent {file} (pass {pass_num + 1}/{settings.passes}) at "
-                        f"{(1/((time.perf_counter() - start_time)/len(raw_bytes))) / (1024 * 1024):.1f}MB/s")
+                        f"{(1/((time.perf_counter() - start_time)/len(raw_bytes))) / (1024 * 1024):.1f} MB/s")
 
 
 if __name__ == "__main__":
@@ -43,5 +43,5 @@ if __name__ == "__main__":
             file_bytes = filepath.read_bytes()
             total_bytes += len(file_bytes)
             sender.send_file(File(str(path), file_bytes))
-    logger.success(f"Finished sending all files in {input_folder} at {(1/((time.perf_counter() - global_time)/total_bytes))/1_000_000:.1f}MB/s")
+    logger.success(f"Finished sending all files in {input_folder} at {(1/((time.perf_counter() - global_time)/total_bytes))/1_000_000:.1f} MB/s")
     sender.send_packet(End())

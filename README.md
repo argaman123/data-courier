@@ -7,3 +7,4 @@
 - [ ]  Prioritising *muf*
 - [ ]  Error correction *muf*
 - [ ]  Memory cleaning process
+- [ ]  Error handling

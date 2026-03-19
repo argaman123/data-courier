@@ -16,16 +16,16 @@ class PartialFile:
     def process(self, packet: Packet) -> bool:
         if self.complete: return False
 
-        if packet.type == Header.default_type():
+        if packet.type == Header.default_type:
             self.header = Header.from_packet(packet)
-        elif packet.type == Payload.default_type():
+        elif packet.type == Payload.default_type:
             self.data.insert(packet)
-        elif packet.type == End.default_type():
+        elif packet.type == End.default_type:
             return True
 
         if self.header is not None and self.data.is_complete():
             self.complete = True
-            logger.info(f"Finished receiving {self}")
+            logger.info(f"Finished processing {self}")
 
         return False
 

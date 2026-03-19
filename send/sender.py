@@ -1,3 +1,4 @@
+import math
 import socket
 import time
 
@@ -10,23 +11,37 @@ from send.pacer import Pacer
 class Sender:
     def __init__(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, settings.buffer_size)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, settings.socket_buffer_size)
         self.pacer = Pacer()
 
     def send_packet(self, packet: Packet, immediate=False):
-        self.sock.sendto(packet.to_bytes(), (settings.ip, settings.port)) # maybe add packet size?
+        self.sock.sendto(bytes(packet), (settings.ip, settings.port)) # maybe add packet size?
         if not immediate: self.pacer.wait_if_needed()
 
+    @staticmethod
+    def _chunked_data(raw_bytes: memoryview, chunks: list[tuple[int, memoryview]]):
+        if len(chunks) == 0:
+            for i in range(0, len(raw_bytes), settings.payload_size):
+                payload = raw_bytes[i:i + settings.payload_size]
+                chunks.append((i, payload))
+                yield i, payload
+        else:
+            yield from chunks
+
     def send_file(self, file: File):
+        header = Header.from_file(file)
         raw_bytes = memoryview(file.bytes)
-        chunks = [(i, raw_bytes[i:i + settings.chunk_size]) for i in range(0, len(raw_bytes), settings.chunk_size)]
-        logger.info(f"Sending {file} ({len(chunks)} chunks)")
+        chunks: list[tuple[int, memoryview]] = []
+        logger.info(f"Sending {file} ({math.ceil(len(raw_bytes) / settings.payload_size)} packets)")
         for pass_num in range(settings.passes):
             start_time = time.perf_counter()
-            self.send_packet(Header.from_file(file))
-            for offset, payload in chunks:
+            self.send_packet(header)
+            for (offset, payload) in self._chunked_data(raw_bytes, chunks):
                 self.send_packet(Payload(file.id, offset, len(raw_bytes), payload.tobytes()))
-            logger.info(f"Sent {file} (pass {pass_num + 1}/{settings.passes}) at {(1/((time.perf_counter() - start_time)/len(raw_bytes)))/1_000_000:.1f}MB/s")
+            elapsed = time.perf_counter() - start_time
+            if elapsed > 0:
+                logger.info(f"Sent {file} (pass {pass_num + 1}/{settings.passes}) at "
+                            f"{1 / (elapsed / len(raw_bytes)) / (1024 * 1024):.1f} MB/s")
 
 
 if __name__ == "__main__":
@@ -42,5 +57,5 @@ if __name__ == "__main__":
             file_bytes = filepath.read_bytes()
             total_bytes += len(file_bytes)
             sender.send_file(File(str(path), file_bytes))
-    logger.success(f"Finished sending all files in {input_folder} at {(1/((time.perf_counter() - global_time)/total_bytes))/1_000_000:.1f}MB/s")
+    logger.success(f"Finished sending all files in {input_folder} at {(1/((time.perf_counter() - global_time)/total_bytes))/1_000_000:.1f} MB/s")
     sender.send_packet(End())

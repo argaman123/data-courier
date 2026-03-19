@@ -6,3 +6,5 @@
 - [ ]  Threads and pools *muf*
 - [ ]  Prioritising *muf*
 - [ ]  Error correction *muf*
+- [ ]  Memory cleaning process
+- [ ]  Error handling *argaman*

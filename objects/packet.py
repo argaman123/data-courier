@@ -1,4 +1,5 @@
-import dataclasses, struct
+import struct
+
 from objects.file import File
 
 
@@ -13,7 +14,7 @@ class Packet:
         self.total_size = total_size
         self.payload = payload
 
-    def to_bytes(self) -> bytes:
+    def __bytes__(self) -> bytes:
         return struct.pack(self.format, self.id, self.type, self.offset, self.total_size) + self.payload
 
     @staticmethod
@@ -41,7 +42,7 @@ class Header(Packet):
 
     @classmethod
     def from_packet(cls, packet: Packet):
-        return cls(packet.id, packet.total_size, packet.payload[64:].decode("utf-8"), packet.payload[:64])
+        return cls(packet.id, packet.total_size, packet.payload[32:].decode("utf-8"), packet.payload[:32])
 
 class Payload(Packet):
     default_type = 1

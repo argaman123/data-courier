@@ -1,6 +1,4 @@
-import hashlib, multiprocessing
-import queue
-import time
+import hashlib
 from multiprocessing import shared_memory
 from multiprocessing.queues import Queue
 
@@ -11,7 +9,6 @@ from objects.packet import Packet, End
 from objects.partial_file import PartialFile
 from receive.monitor import MonitoredProcess
 from receive.writer import Writer
-from send.pacer import Pacer
 
 
 class Processor(MonitoredProcess):
@@ -32,7 +29,7 @@ class Processor(MonitoredProcess):
                 pass
             elif partial_file.complete:
                 actual_file = Path(Path(settings.output_folder)) / Path(partial_file.header.path)
-                checksum = hashlib.blake2b(actual_file.read_bytes()).digest()
+                checksum = hashlib.sha256(actual_file.read_bytes()).digest()
                 if checksum != partial_file.header.checksum:
                     logger.error(f"File is malformed {partial_file.header.path} [{checksum.hex()} != {partial_file.header.checksum.hex()}]")
                     error = True

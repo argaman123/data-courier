@@ -12,7 +12,7 @@ class File:
         if checksum is not None:
             self.checksum = checksum
         else:
-            self.checksum = hashlib.blake2b(self.bytes).digest()
+            self.checksum = hashlib.sha256(self.bytes).digest()
 
     def __str__(self):
         return self.path + f" [{self.id.hex()}]"

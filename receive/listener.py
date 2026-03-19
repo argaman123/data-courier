@@ -1,4 +1,3 @@
-import multiprocessing
 import queue
 import socket
 from multiprocessing import shared_memory

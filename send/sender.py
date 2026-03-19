@@ -15,7 +15,7 @@ class Sender:
         self.pacer = Pacer()
 
     def send_packet(self, packet: Packet, immediate=False):
-        self.sock.sendto(packet.to_bytes(), (settings.ip, settings.port)) # maybe add packet size?
+        self.sock.sendto(bytes(packet), (settings.ip, settings.port)) # maybe add packet size?
         if not immediate: self.pacer.wait_if_needed()
 
     @staticmethod
@@ -29,12 +29,13 @@ class Sender:
             yield from chunks
 
     def send_file(self, file: File):
+        header = Header.from_file(file)
         raw_bytes = memoryview(file.bytes)
         chunks: list[tuple[int, memoryview]] = []
         logger.info(f"Sending {file} ({math.ceil(len(raw_bytes) / settings.payload_size)} packets)")
         for pass_num in range(settings.passes):
             start_time = time.perf_counter()
-            self.send_packet(Header.from_file(file))
+            self.send_packet(header)
             for (offset, payload) in self._chunked_data(raw_bytes, chunks):
                 self.send_packet(Payload(file.id, offset, len(raw_bytes), payload.tobytes()))
             elapsed = time.perf_counter() - start_time

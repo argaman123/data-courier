@@ -7,7 +7,8 @@ from pathlib import Path
 
 from config import (settings, logger)
 from objects.packet import Packet, End
-from objects.partial_file import PartialFile
+from receive.decoder import Decoder
+from receive.partial_file import PartialFile
 from receive.monitor import MonitoredProcess
 from receive.writer import Writer
 
@@ -39,13 +40,13 @@ class Processor(MonitoredProcess):
                 path = ""
                 if partial_file.header is not None:
                     path = partial_file.header.path
-                logger.error(f"Packets are missing {path} [{key.hex()}] {partial_file.data}")
+                logger.error(f"Packets are missing {path} [{key.hex()}] {partial_file.decoder}")
                 error = True
             self.processing.pop(key)
         if error:
-            logger.error(f"Test failed")
+            logger.error(f"Test failed. Max index distance was {Decoder.max_packet_index_distance}")
         else:
-            logger.success("All files arrived fully!")
+            logger.success(f"All files arrived fully! Max index distance was {Decoder.max_packet_index_distance}")
 
     def run(self):
         self.writer = Writer(self.id)
@@ -63,7 +64,7 @@ class Processor(MonitoredProcess):
                 done = self.processing[packet.file_id].process(packet)
                 if self.processing[packet.file_id].complete:
                     self.writer.files.put(copy.copy(self.processing[packet.file_id]))
-                    self.processing[packet.file_id].data = None
+                    self.processing[packet.file_id].free_memory()
                 if done:
                     self.test_and_reset()
 

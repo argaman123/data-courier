@@ -2,7 +2,7 @@ import os, threading, queue
 from pathlib import Path
 
 from config import settings, logger
-from objects.partial_file import PartialFile
+from receive.partial_file import PartialFile
 
 class Writer(threading.Thread):
     def __init__(self, _id: str):

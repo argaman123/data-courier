@@ -1,17 +1,22 @@
 from objects.file import File
 from objects.packet import Packet, Header, End, Payload
 from config import logger
-from objects.partial_bytearray import PartialByteArray
+from receive.decoder import Decoder
 
 
 class PartialFile:
     def __init__(self):
         self.header: Header | None = None
-        self.data = PartialByteArray()
+        self.decoder = Decoder()
         self.complete: bool = False
 
+    def free_memory(self):
+        # TODO RETURN IN PRODUCTION
+        # self.header = None
+        self.decoder = None
+
     def to_file(self) -> File:
-        return File(self.header.path, self.data.to_bytes(), self.header.file_id)
+        return File(self.header.path, self.decoder.to_bytes(), self.header.file_id)
 
     def process(self, packet: Packet) -> bool:
         if self.complete: return False
@@ -19,11 +24,11 @@ class PartialFile:
         if packet.type == Header.default_type:
             self.header = Header.from_packet(packet)
         elif packet.type == Payload.default_type:
-            self.data.insert(packet)
+            self.decoder.process(packet)
         elif packet.type == End.default_type:
             return True
 
-        if self.header is not None and self.data.is_complete():
+        if self.header is not None and self.decoder.is_complete():
             self.complete = True
             logger.info(f"Finished processing {self}")
 

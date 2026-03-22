@@ -11,7 +11,7 @@ class PartialFile:
         self.complete: bool = False
 
     def to_file(self) -> File:
-        return File(self.header.path, self.data.to_bytes(), self.header.id)
+        return File(self.header.path, self.data.to_bytes(), self.header.file_id)
 
     def process(self, packet: Packet) -> bool:
         if self.complete: return False
@@ -30,4 +30,4 @@ class PartialFile:
         return False
 
     def __str__(self):
-        return f"[{self.header.id.hex()}]"
+        return f"[{self.header.file_id.hex()}]"

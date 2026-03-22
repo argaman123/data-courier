@@ -1,3 +1,4 @@
+import copy
 import hashlib
 from multiprocessing import shared_memory
 from multiprocessing.queues import Queue
@@ -55,13 +56,14 @@ class Processor(MonitoredProcess):
             offset, size = self.offset_queue.get()
             actual_bytes = shm.buf[offset:offset + size]
             packet = Packet.from_bytes(actual_bytes.tobytes())
-            if packet.id not in self.processing:
+            if packet.file_id not in self.processing:
                 logger.info(f"Started processing {packet}")
-                self.processing[packet.id] = PartialFile()
-            if not self.processing[packet.id].complete:
-                done = self.processing[packet.id].process(packet)
-                if self.processing[packet.id].complete:
-                    self.writer.files.put(self.processing[packet.id])
+                self.processing[packet.file_id] = PartialFile()
+            if not self.processing[packet.file_id].complete:
+                done = self.processing[packet.file_id].process(packet)
+                if self.processing[packet.file_id].complete:
+                    self.writer.files.put(copy.copy(self.processing[packet.file_id]))
+                    self.processing[packet.file_id].data = None
                 if done:
                     self.test_and_reset()
 

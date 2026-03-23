@@ -5,6 +5,7 @@ import zfec
 
 from config import settings
 from objects.file import File
+from objects.packet import Packet
 
 
 @lru_cache(maxsize=256)
@@ -58,6 +59,6 @@ def generate_chunks(file: File, pass_num: int, max_chunks=100):
             for _packet_index in range(k):
                 for _chunk_index, _chunk in chunks:
                     if _packet_index < len(_chunk):
-                        yield k, m, _chunk_index, _packet_index + start_packet, _chunk[_packet_index]
+                        yield Packet(file.id, len(file), k, m, _chunk_index, _packet_index + start_packet, _chunk[_packet_index])
             chunks = []
 

@@ -2,7 +2,7 @@ import json, math, socket, time
 from pathlib import Path
 
 from config import settings, logger
-from objects.packet import Packet, End
+from objects.packet import Packet
 from send.encoder import generate_chunks, calc_k_m
 from objects.file import File
 from send.pacer import Pacer
@@ -20,37 +20,40 @@ class Sender:
 
 
     def send_file(self, file: File):
+        global total_size
         k, m = calc_k_m(len(file))
         chunks_amount = math.ceil(len(file) / (k * settings.payload_size))
         logger.info(f"Sending {file} ({chunks_amount} chunks of {k} packets) with {int((m-k)/m*100)}% redundancy, "
                     f"in {math.ceil(settings.packets_multiplier)} passes")
-        
         for pass_num in range(math.ceil(settings.packets_multiplier)):
             size = 0
             start_time = time.perf_counter()
-            for k, m, chunk_index, packet_index,  payload in generate_chunks(file, pass_num):
-                size += len(payload)
-                self.send_packet(Packet(0, file.id, len(file), k, m, chunk_index, packet_index,  payload))
-
+            for packet in generate_chunks(file, pass_num):
+                size += len(packet)
+                self.send_packet(packet)
+            total_size += size
             elapsed = time.perf_counter() - start_time
             if elapsed > 0:
                 logger.info(f"Sent {file} (pass {pass_num + 1}/{math.ceil(settings.packets_multiplier)}) at "
                             f"{1 / (elapsed / size) / (1024 * 1024):.1f} MB/s")
 
 
+# TODO <editor-fold desc="REMOVE TOTAL_SIZE, INFO AND CHECKSUM IN PROD">
 if __name__ == "__main__":
     sender = Sender()
     global_time = time.perf_counter()
-    total_bytes = 0
+    total_size = 0
     input_folder = Path(settings.input_folder)
-    checksums = {}
+    info = {}
     for filepath in input_folder.rglob('*'):
-        if filepath.is_file():
+        if filepath.is_file() and filepath.stat().st_size > 0:
             _file = File(filepath)
             sender.send_file(_file)
-            checksums[_file.path.name] = _file.checksum().hex()
-            total_bytes += len(_file)
-    with open("checksums", "w") as f:
-        f.write(json.dumps(checksums))
-    sender.send_packet(End())
-    logger.success(f"Finished sending all files in {input_folder} at {(1/((time.perf_counter() - global_time)/total_bytes))/1_000_000:.1f} MB/s")
+            info[_file.path.name] = {'id': _file.id.hex(), 'checksum': _file.checksum().hex()}
+    info_file = Path("info.json")
+    with info_file.open("w") as f:
+        f.write(json.dumps(info))
+    sender.send_file(File(info_file))
+    logger.success(f"Finished sending all files in {input_folder} at "
+                   f"{(1/((time.perf_counter() - global_time)/total_size))/1_000_000:.1f} MB/s")
+# TODO </editor-fold>

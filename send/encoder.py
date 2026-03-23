@@ -4,18 +4,19 @@ from functools import lru_cache
 import zfec
 
 from config import settings
+from objects.file import File
 
 
 @lru_cache(maxsize=256)
 def _get_encoder(k, m):
     return zfec.Encoder(k, m)
 
-"""
-Calculates the best fitting (k, m) for the provided file_size.
-Tries to keep the m/k ratio as close to packets_multiplier as possible, while maximizing chunk size and 
-minimizing extra empty packets (needed for the algorithm to work)  
-"""
 def calc_k_m(file_size: int):
+    """
+    Calculates the best fitting (k, m) for the provided file_size.
+    Tries to keep the m/k ratio as close to packets_multiplier as possible, while maximizing chunk size and
+    minimizing extra empty packets (needed for the algorithm to work)
+    """
     total_packets = math.ceil(file_size / settings.payload_size)
     max_k = int(255 // settings.packets_multiplier) # 255 to keep it within byte range
 
@@ -33,15 +34,14 @@ def calc_k_m(file_size: int):
 
     return best_k, int(best_k * settings.packets_multiplier)
 
-def generate_chunks(raw_bytes: memoryview, pass_num: int, max_chunks=100):
+def generate_chunks(file: File, pass_num: int, max_chunks=100):
     chunks: list[tuple[int, list]] = []
-    k, m = calc_k_m(len(raw_bytes))
+    k, m = calc_k_m(len(file))
     chunk_size = k * settings.payload_size
     encoder = _get_encoder(k, m)
     last_chunk = False
-    for chunk_index, offset in enumerate(range(0, len(raw_bytes), chunk_size)):
-        chunk_bytes = raw_bytes[offset:offset + chunk_size]
-        if offset + chunk_size >= len(raw_bytes):
+    for chunk_index, (offset, chunk_bytes) in enumerate(file.read(chunk_size)):
+        if offset + chunk_size >= len(file):
             last_chunk = True
             # all payloads must keep the same size for the decoder to work properly
             if len(chunk_bytes) < chunk_size:
@@ -55,7 +55,7 @@ def generate_chunks(raw_bytes: memoryview, pass_num: int, max_chunks=100):
         chunks.append((chunk_index, encoded_payloads))
 
         if len(chunks) >= max_chunks or last_chunk:
-            for _packet_index in range(k): # TODO maybe randomize?
+            for _packet_index in range(k):
                 for _chunk_index, _chunk in chunks:
                     if _packet_index < len(_chunk):
                         yield k, m, _chunk_index, _packet_index + start_packet, _chunk[_packet_index]

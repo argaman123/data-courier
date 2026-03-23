@@ -15,9 +15,9 @@ class Writer(threading.Thread):
         logger.info("Background disk writer thread started")
         while True:
             partial_file = self.files.get()
-            file = partial_file.to_file()
-            logger.info(f"Started saving {file}")
-            with open(os.path.join(str(Path(settings.output_folder)), file.path), 'wb') as f:
-                f.write(file.bytes)
-            logger.success(f"Saved {file}")
+            (path, file_bytes) = partial_file.to_file()
+            logger.info(f"Started saving {path}")
+            with open(Path(settings.output_folder) / path, 'wb') as f:
+                f.write(file_bytes)
+            logger.success(f"Saved {path}")
             self.files.task_done()

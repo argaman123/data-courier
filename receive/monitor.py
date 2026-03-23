@@ -5,7 +5,8 @@ import time
 
 from config import logger, settings
 
-# TODO REMOVE MONITORING IN PRODUCTION
+
+# TODO <editor-fold desc="REMOVE MONITOR IN PROD">
 class MonitoredProcess(multiprocessing.Process, abc.ABC):
     def __init__(self, monitor_rate=None, **kwargs):
         super().__init__(**kwargs)
@@ -33,3 +34,4 @@ class MonitoredProcess(multiprocessing.Process, abc.ABC):
     def notify_monitor(self, amount: int):
         if self.enabled:
             self.bytes_counter.value += amount
+# TODO </editor-fold>

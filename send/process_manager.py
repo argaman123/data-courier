@@ -1,7 +1,13 @@
-from config import settings, logger
+import dataclasses
+
+from config import logger
 import time
 from multiprocessing import Pool, Manager
-from objects.file import File
+
+@dataclasses.dataclass
+class File:
+    path: str
+    bytes: bytes
 
 #prop func fot testing
 def get_file():

@@ -1,38 +1,84 @@
+import math
+from functools import lru_cache
+
+import zfec
+
+from objects.packet import Packet
+from config import settings
 from objects.file import File
-from objects.packet import Packet, Header, End, Payload
-from config import logger
-from receive.decoder import Decoder
 
 
 class PartialFile:
+    # TODO <editor-fold desc="REMOVE VARIABLE IN PROD">
+    max_packet_index_distance = 0
+    # TODO </editor-fold>
+
     def __init__(self):
-        self.header: Header | None = None
-        self.decoder = Decoder()
-        self.complete: bool = False
+        self.file_id: bytes | None = None
+        self.decoder: zfec.Decoder | None = None
+        self.file_size = 0
+        self.bytearray: bytearray | None = None
+        self.chunks: dict[int, dict[int, bytes]] = {}
+        self.arrived: bytearray | None = None
+        self.chunks_arrived = 0
+        self.total_chunks = 0
+
+    @property
+    def complete(self):
+        return self.file_id is not None and self.chunks_arrived == self.total_chunks
 
     def free_memory(self):
-        # TODO RETURN IN PRODUCTION
-        # self.header = None
-        self.decoder = None
+        self.chunks.clear()
+        self.bytearray = None
+        self.arrived = None
 
-    def to_file(self) -> File:
-        return File(self.header.path, self.decoder.to_bytes(), self.header.file_id)
+    def to_file(self):
+        return File.extract_header(self.bytearray)
 
-    def process(self, packet: Packet) -> bool:
-        if self.complete: return False
+    def process(self, packet: Packet):
+        if self.file_id is None:
+            self.file_id = packet.file_id
+            self.decoder = self._get_decoder(packet.k, packet.m)
+            self.file_size = packet.file_size
+            self.total_chunks = math.ceil(self.file_size / (packet.k * settings.payload_size))
+            self.bytearray = bytearray(self.file_size)
+            self.arrived = bytearray(self.total_chunks)
 
-        if packet.type == Header.default_type:
-            self.header = Header.from_packet(packet)
-        elif packet.type == Payload.default_type:
-            self.decoder.process(packet)
-        elif packet.type == End.default_type:
-            return True
+        if self.arrived[packet.chunk_index]:
+            return self.complete
 
-        if self.header is not None and self.decoder.is_complete():
-            self.complete = True
-            logger.info(f"Finished processing {self}")
+        if packet.chunk_index not in self.chunks:
+            self.chunks[packet.chunk_index] = {}
+        chunk = self.chunks[packet.chunk_index]
 
-        return False
+        if packet.packet_index not in chunk:
+            chunk[packet.packet_index] = packet.payload
+
+            if len(chunk) == packet.k:
+                # TODO <editor-fold desc="REMOVE VARIABLE IN PROD">
+                self.max_packet_index_distance = max(self.max_packet_index_distance, packet.packet_index - packet.k)
+                # TODO </editor-fold>
+
+                payload_list = self.decoder.decode(tuple(chunk.values()), tuple(chunk.keys()))
+                offset = packet.chunk_index * (packet.k * settings.payload_size)
+                for raw_payload in payload_list:
+                    if offset + len(raw_payload) > self.file_size:
+                        payload = raw_payload[:self.file_size - offset]
+                    else:
+                        payload = raw_payload
+                    self.bytearray[offset:offset + len(payload)] = payload
+                    offset += len(payload)
+
+                del self.chunks[packet.chunk_index]
+                self.arrived[packet.chunk_index] = True
+                self.chunks_arrived += 1
+
+        return self.complete
+
+    @staticmethod
+    @lru_cache(maxsize=256)
+    def _get_decoder(k, m):
+        return zfec.Decoder(k, m)
 
     def __str__(self):
-        return f"[{self.header.file_id.hex()}]"
+        return f"[{self.file_id.hex()}] ({self.chunks_arrived}/{self.total_chunks} chunks)"

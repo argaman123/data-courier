@@ -1,11 +1,10 @@
-import math
-import socket
-import time
+import json, math, socket, time
+from pathlib import Path
 
 from config import settings, logger
-from objects.file import File
-from objects.packet import Packet, Payload, Header, End
+from objects.packet import Packet, End
 from send.encoder import generate_chunks, calc_k_m
+from objects.file import File
 from send.pacer import Pacer
 
 
@@ -21,22 +20,17 @@ class Sender:
 
 
     def send_file(self, file: File):
-        header = Header.from_file(file)
-        raw_bytes = memoryview(file.bytes)
-
-        k, m = calc_k_m(len(raw_bytes))
-        chunks_amount = math.ceil(len(raw_bytes) / (k * settings.payload_size))
+        k, m = calc_k_m(len(file))
+        chunks_amount = math.ceil(len(file) / (k * settings.payload_size))
         logger.info(f"Sending {file} ({chunks_amount} chunks of {k} packets) with {int((m-k)/m*100)}% redundancy, "
                     f"in {math.ceil(settings.packets_multiplier)} passes")
         
         for pass_num in range(math.ceil(settings.packets_multiplier)):
             size = 0
             start_time = time.perf_counter()
-
-            self.send_packet(header)
-            for k, m, chunk_index, packet_index,  payload in generate_chunks(raw_bytes, pass_num):
+            for k, m, chunk_index, packet_index,  payload in generate_chunks(file, pass_num):
                 size += len(payload)
-                self.send_packet(Payload(file.id, len(raw_bytes), k, m, chunk_index, packet_index,  payload))
+                self.send_packet(Packet(0, file.id, len(file), k, m, chunk_index, packet_index,  payload))
 
             elapsed = time.perf_counter() - start_time
             if elapsed > 0:
@@ -48,14 +42,15 @@ if __name__ == "__main__":
     sender = Sender()
     global_time = time.perf_counter()
     total_bytes = 0
-    from pathlib import Path
     input_folder = Path(settings.input_folder)
+    checksums = {}
     for filepath in input_folder.rglob('*'):
         if filepath.is_file():
-            path = filepath.relative_to(input_folder)
-            logger.info(f"Reading {path}")
-            file_bytes = filepath.read_bytes()
-            total_bytes += len(file_bytes)
-            sender.send_file(File(str(path), file_bytes))
-    logger.success(f"Finished sending all files in {input_folder} at {(1/((time.perf_counter() - global_time)/total_bytes))/1_000_000:.1f} MB/s")
+            _file = File(filepath)
+            sender.send_file(_file)
+            checksums[_file.path.name] = _file.checksum().hex()
+            total_bytes += len(_file)
+    with open("checksums", "w") as f:
+        f.write(json.dumps(checksums))
     sender.send_packet(End())
+    logger.success(f"Finished sending all files in {input_folder} at {(1/((time.perf_counter() - global_time)/total_bytes))/1_000_000:.1f} MB/s")

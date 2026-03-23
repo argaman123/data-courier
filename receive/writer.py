@@ -11,7 +11,7 @@ class Writer(threading.Thread):
         super().__init__()
         self.name = "Writer-" + _id
         self.daemon = True
-        self.files: queue.Queue[PartialFile] = queue.Queue()
+        self.files: queue.Queue[PartialFile] = queue.Queue(maxsize=settings.file_queue_size)
         # TODO <editor-fold desc="REMOVE PROCESSOR REFERENCE IN PROD">
         self.processor = processor
         # TODO </editor-fold>
@@ -26,6 +26,7 @@ class Writer(threading.Thread):
                 f.write(file_bytes)
             logger.success(f"Saved {path}")
             self.files.task_done()
+            del partial_file, file_bytes
 
             # TODO <editor-fold desc="REMOVE INFO FILE IN PROD">
             if path == "info.json":

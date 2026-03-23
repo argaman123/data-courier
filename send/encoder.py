@@ -35,7 +35,7 @@ def calc_k_m(file_size: int):
 
     return best_k, int(best_k * settings.packets_multiplier)
 
-def generate_chunks(file: File, pass_num: int, max_chunks=100):
+def generate_chunks(file: File, pass_num: int, max_chunks=settings.max_encoded_chunks):
     chunks: list[tuple[int, list]] = []
     k, m = calc_k_m(len(file))
     chunk_size = k * settings.payload_size

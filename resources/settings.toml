@@ -1,5 +1,5 @@
 [default]
-log_level = 'DEBUG'
+log_level = 'INFO'
 ip = '192.168.1.2'
 port = 55555
 
@@ -13,7 +13,10 @@ pacer_batch_size = 100 # magic number?
 socket_buffer_size = 256_000_000
 receiver_buffer_size = 256_000_000
 payload_size = 1_400 # below ip fragmantation
-packets_multiplier = 3
+packets_multiplier = 2
+
+max_encoded_chunks = 100
+file_queue_size = 100
 
 shm_prefix = 'shm_'
 input_folder = 'tests/input'

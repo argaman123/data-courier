@@ -54,6 +54,7 @@ if __name__ == "__main__":
     with info_file.open("w") as f:
         f.write(json.dumps(info))
     sender.send_file(File(info_file))
+    info_file.unlink()
     logger.success(f"Finished sending all files in {input_folder} at "
                    f"{(1/((time.perf_counter() - global_time)/total_size))/1_000_000:.1f} MB/s")
 # TODO </editor-fold>

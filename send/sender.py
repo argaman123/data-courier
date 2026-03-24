@@ -49,7 +49,9 @@ if __name__ == "__main__":
         if filepath.is_file() and filepath.stat().st_size > 0:
             _file = File(filepath)
             sender.send_file(_file)
+            start_checksum_time = time.perf_counter()
             info[_file.path.name] = {'id': _file.id.hex(), 'checksum': _file.checksum().hex()}
+            global_time += time.perf_counter() - start_checksum_time
     info_file = Path("info.json")
     with info_file.open("w") as f:
         f.write(json.dumps(info))

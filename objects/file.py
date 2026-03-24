@@ -7,10 +7,7 @@ class File:
     def __init__(self, path: Path):
         self.path = path
         self.id = os.urandom(8)
-        header = self._encode_header()
-        self.write_offset = len(header)
-        self.bytearray = bytearray(self.write_offset + path.stat().st_size)
-        self.bytearray[:self.write_offset] = header
+        self.header = self._encode_header()
 
     def _encode_header(self):
         name_bytes = self.path.name.encode("utf-8")
@@ -24,25 +21,21 @@ class File:
         return path, raw_bytes[2 + name_length:]
 
     def read(self, size: int):
-        raw_bytes = memoryview(self.bytearray)
-        if self.write_offset >= len(self.bytearray):
-            for offset in range(0, len(self.bytearray), size):
-                yield offset, raw_bytes[offset:offset + size]
-        else:
-            with self.path.open("rb") as file:
-                while data := file.read(size - (self.write_offset % size)):
-                    self.bytearray[self.write_offset:self.write_offset + len(data)] = data
-                    offset = int(self.write_offset // size) * size
-                    self.write_offset += len(data)
-                    yield offset, raw_bytes[offset:self.write_offset]
+        offset = 0
+        with self.path.open("rb") as file:
+            data = self.header + file.read(size - len(self.header))
+            while data:
+                yield offset, data
+                offset += len(data)
+                data = file.read(size)
 
     def __len__(self):
-        return len(self.bytearray)
+        return len(self.header) + self.path.stat().st_size
 
     def __str__(self):
         return self.path.name + f" [{self.id.hex()}]"
 
     # TODO <editor-fold desc="REMOVE CHECKSUM IN PROD">
     def checksum(self):
-        return hashlib.sha256(self.extract_header(self.bytearray)[1]).digest()
+        return hashlib.sha256(self.path.read_bytes()).digest()
     # TODO </editor-fold>

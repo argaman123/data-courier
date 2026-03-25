@@ -4,7 +4,7 @@ import threading
 from multiprocessing import shared_memory
 from multiprocessing.queues import Queue
 from config import settings, logger
-from objects.packet import Payload
+from objects.packet import Packet
 from receive.listener import Listener
 from receive.processor import Processor
 
@@ -16,7 +16,7 @@ class Receiver:
         # By reducing one spot I'm making sure I would never overlap the bytearray,
         # even when the listener is too fast compared to the processor
         self.offset_queue: Queue[tuple[int, int]] = \
-            (multiprocessing.Queue(maxsize=settings.receiver_buffer_size // (settings.payload_size + Payload.header_size) - 1))
+            (multiprocessing.Queue(maxsize=int(settings.receiver_buffer_size // (settings.payload_size + Packet.header_size)) - 1))
         self.processes = [
             Processor(_id, self.offset_queue),
             Listener(_id, self.offset_queue)

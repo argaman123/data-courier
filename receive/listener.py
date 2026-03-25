@@ -3,12 +3,12 @@ import socket
 from multiprocessing import shared_memory
 from multiprocessing.queues import Queue
 from config import settings, logger
-from objects.packet import Payload
+from objects.packet import Packet
 from receive.monitor import MonitoredProcess
 
 
 class Listener(MonitoredProcess):
-    packet_size = settings.payload_size + Payload.header_size
+    packet_size = settings.payload_size + Packet.header_size
 
     def __init__(self, _id: str, offset_queue: Queue[tuple[int, int]]):
         super().__init__(name=f"Listener-{_id}", daemon=True)

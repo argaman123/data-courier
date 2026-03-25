@@ -38,9 +38,8 @@ def generate_chunks(file: File, pass_num: int, max_chunks=settings.max_encoded_c
     for chunk_index, (offset, chunk_bytes) in enumerate(file.read(chunk_size)):
         if offset + chunk_size >= len(file):
             last_chunk = True
-            # all payloads must keep the same size for the decoder to work properly
             if len(chunk_bytes) < chunk_size:
-                chunk_bytes = bytes(chunk_bytes) + b'\x00' * (chunk_size - len(chunk_bytes))
+                chunk_bytes = bytes(chunk_bytes).ljust(chunk_size)
 
         payloads = [chunk_bytes[i:i + settings.payload_size] for i in range(0, chunk_size, settings.payload_size)]
 

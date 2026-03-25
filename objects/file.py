@@ -11,9 +11,10 @@ class File:
         self.path = path
         self.id = os.urandom(8)
         self.header = self._encode_header()
+        self.size = len(self.header) + self.path.stat().st_size
         self.cached = False
         if settings.enable_file_caching:
-            self.bytearray = bytearray(len(self))
+            self.bytearray = bytearray(self.size)
 
     def _encode_header(self):
         name_bytes = self.path.name.encode("utf-8")
@@ -45,7 +46,7 @@ class File:
                 self.cached = True
 
     def __len__(self):
-        return len(self.header) + self.path.stat().st_size
+        return self.size
 
     def __str__(self):
         return self.path.name + f" [{self.id.hex()}]"

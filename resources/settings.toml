@@ -1,5 +1,5 @@
 [default]
-log_level = 'INFO'
+log_level = 'DEBUG'
 ip = '192.168.1.2'
 port = 55555
 
@@ -8,12 +8,12 @@ monitor_rate = 1 # in seconds
 
 pacer_target_speed = false
 #pacer_target_speed = 12_500_000 # 100Mbps
-pacer_batch_size = 100 # magic number?
+pacer_batch_size = 100
 
 socket_buffer_size = 256_000_000
 receiver_buffer_size = 256_000_000
 payload_size = 1_400 # below ip fragmantation
-packets_multiplier = 2
+packets_multiplier = 3
 
 max_encoded_chunks = 100
 file_queue_size = 100

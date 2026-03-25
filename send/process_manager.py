@@ -14,9 +14,9 @@ def send_file(file):
 
 
 class WorkerPool:
-    def __init__(self, num_processes):
+    def __init__(self, num_processes, initializer):
         self.num_processes = num_processes
-        self.pool = Pool(self.num_processes)
+        self.pool = Pool(self.num_processes, initializer)
 
     def run(self, get_func, send_func):
         with Manager() as mgr:
@@ -26,7 +26,7 @@ class WorkerPool:
                     self.wait_for_available_workstation(workstation_pool)
                     file = get_func()
                     pool.apply_async(self.clam_job, args=(workstation_pool, file, send_func,), error_callback=logger.error, callback=logger.info)
-                    time.sleep(.1)
+                    time.sleep(.05)
 
     @staticmethod
     def clam_job(workstation_pool, file, send_func):
@@ -39,7 +39,10 @@ class WorkerPool:
         workstation_pool.acquire()
         workstation_pool.release()
 
+def init():
+    logger.info("init")
+
 
 
 if __name__ == "__main__":
-    WorkerPool(10).run(get_file, send_file)
+    WorkerPool(10, init).run(get_file, send_file)

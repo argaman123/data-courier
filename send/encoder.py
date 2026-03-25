@@ -19,7 +19,7 @@ def calc_k_m(file_size: int):
     """
     total_packets = math.ceil(file_size / settings.payload_size)
 
-    max_k = int(255 / settings.packets_multiplier)
+    max_k = int(256 / settings.packets_multiplier)
     if total_packets < max_k:
         if settings.enlarge_tiny_files:
             k = math.ceil(max_k / 2)

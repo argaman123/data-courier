@@ -14,18 +14,21 @@ class Packet:
     payload: bytes
 
     # noinspection SpellCheckingInspection
-    format: ClassVar[str] = '<8sIBBIB'
+    format: ClassVar[str] = '<8sQBBIB'
     header_size: ClassVar[int] = struct.calcsize(format)
 
     def __bytes__(self) -> bytes:
-        return (struct.pack(self.format, self.file_id, self.file_size, self.k, self.m, self.chunk_index, self.packet_index)
+        return (struct.pack(self.format, self.file_id, self.file_size, self.k - 1, self.m - 1, self.chunk_index, self.packet_index)
                 + self.payload)
 
     @staticmethod
     def from_bytes(data: bytes):
         header = data[:Packet.header_size]
         payload = data[Packet.header_size:]
-        return Packet(*struct.unpack(Packet.format, header), payload=payload)
+        packet = Packet(*struct.unpack(Packet.format, header), payload=payload)
+        packet.k += 1
+        packet.m += 1
+        return packet
 
     def __str__(self):
         return f"[{self.file_id.hex()}]"

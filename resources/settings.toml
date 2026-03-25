@@ -17,6 +17,7 @@ packets_multiplier = 3
 
 max_encoded_chunks = 100
 file_queue_size = 100
+enable_file_caching = false
 
 shm_prefix = 'shm_'
 input_folder = 'tests/input'

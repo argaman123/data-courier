@@ -3,11 +3,17 @@ import os
 import struct
 from pathlib import Path
 
+from config import settings
+
+
 class File:
     def __init__(self, path: Path):
         self.path = path
         self.id = os.urandom(8)
         self.header = self._encode_header()
+        self.cached = False
+        if settings.enable_file_caching:
+            self.bytearray = bytearray(len(self))
 
     def _encode_header(self):
         name_bytes = self.path.name.encode("utf-8")
@@ -21,13 +27,22 @@ class File:
         return path, raw_bytes[2 + name_length:]
 
     def read(self, size: int):
-        offset = 0
-        with self.path.open("rb") as file:
-            data = self.header + file.read(size - len(self.header))
-            while data:
-                yield offset, data
-                offset += len(data)
-                data = file.read(size)
+        if self.cached:
+            raw_bytes = memoryview(self.bytearray)
+            for offset in range(0, len(self.bytearray), size):
+                yield offset, raw_bytes[offset:offset + size]
+        else:
+            offset = 0
+            with self.path.open("rb") as file:
+                data = self.header + file.read(size - len(self.header))
+                while data:
+                    yield offset, data
+                    if settings.enable_file_caching:
+                        self.bytearray[offset:offset + len(data)] = data
+                    offset += len(data)
+                    data = file.read(size)
+            if settings.enable_file_caching:
+                self.cached = True
 
     def __len__(self):
         return len(self.header) + self.path.stat().st_size
@@ -37,5 +52,8 @@ class File:
 
     # TODO <editor-fold desc="REMOVE CHECKSUM IN PROD">
     def checksum(self):
-        return hashlib.sha256(self.path.read_bytes()).digest()
+        if self.cached:
+            return hashlib.sha256(self.extract_header(self.bytearray)[1]).digest()
+        else:
+            return hashlib.sha256(self.path.read_bytes()).digest()
     # TODO </editor-fold>

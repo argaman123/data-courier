@@ -15,25 +15,15 @@ def _get_encoder(k, m):
 def calc_k_m(file_size: int):
     """
     Calculates the best fitting (k, m) for the provided file_size.
-    Tries to keep the m/k ratio as close to packets_multiplier as possible, while maximizing chunk size and
-    minimizing extra empty packets (needed for the algorithm to work)
+    Maximizes k while minimizing extra empty packets needed the last chunk for smaller files.
     """
     total_packets = math.ceil(file_size / settings.payload_size)
-    max_k = int(255 // settings.packets_multiplier) # 255 to keep it within byte range
 
-    if total_packets <= max_k:
-        k = total_packets
-        return k, int(k * settings.packets_multiplier)
-
-    best_k, min_extra_packets = max_k, max_k
-
-    for k in range(max_k, max(1, int(max_k // 2)) - 1, -1):
-        extra_packets = total_packets % k
-        if min_extra_packets > extra_packets:
-            min_extra_packets = extra_packets
-            best_k = k
-
-    return best_k, int(best_k * settings.packets_multiplier)
+    max_k = int(255 / settings.packets_multiplier)
+    if total_packets < max_k:
+        return total_packets
+    k = math.ceil(total_packets / math.ceil(total_packets / max_k))
+    return k, int(k * settings.packets_multiplier)
 
 def generate_chunks(file: File, pass_num: int, max_chunks=settings.max_encoded_chunks):
     chunks: list[tuple[int, list]] = []

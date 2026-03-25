@@ -21,8 +21,9 @@ def calc_k_m(file_size: int):
 
     max_k = int(255 / settings.packets_multiplier)
     if total_packets < max_k:
-        return total_packets
-    k = math.ceil(total_packets / math.ceil(total_packets / max_k))
+        k = math.ceil(max_k / 2)
+    else:
+        k = math.ceil(total_packets / math.ceil(total_packets / max_k))
     return k, int(k * settings.packets_multiplier)
 
 def generate_chunks(file: File, pass_num: int, max_chunks=settings.max_encoded_chunks):

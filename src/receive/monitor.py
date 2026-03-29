@@ -1,13 +1,13 @@
 import abc
-import multiprocessing
+import multiprocessing as mp
 import threading
 import time
 
-from config import logger, settings
+from src.config import logger, settings
 
 
 # TODO <editor-fold desc="REMOVE MONITOR IN PROD">
-class MonitoredProcess(multiprocessing.Process, abc.ABC):
+class MonitoredProcess(mp.Process, abc.ABC):
     def __init__(self, monitor_rate=None, **kwargs):
         super().__init__(**kwargs)
         if monitor_rate is None:
@@ -16,10 +16,8 @@ class MonitoredProcess(multiprocessing.Process, abc.ABC):
             self.enabled = False
         else:
             self.enabled = True
-            self.bytes_counter = multiprocessing.Value('Q', 0, lock=False)
+            self.bytes_counter = mp.Value('Q', 0, lock=False)
             self.monitor_rate = settings.monitor_rate
-            threading.Thread(target=self._monitor, daemon=True, name=self.name).start()
-
 
     def _monitor(self):
         logger.info(f"Monitoring this process every {self.monitor_rate}s")
@@ -34,4 +32,8 @@ class MonitoredProcess(multiprocessing.Process, abc.ABC):
     def notify_monitor(self, amount: int):
         if self.enabled:
             self.bytes_counter.value += amount
+
+    def run(self):
+        threading.Thread(target=self._monitor, daemon=True, name="Monitor").start()
+
 # TODO </editor-fold>

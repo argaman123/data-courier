@@ -3,9 +3,9 @@ from functools import lru_cache
 
 import zfec
 
-from config import settings
-from objects.file import File
-from objects.packet import Packet
+from src.config import settings
+from src.objects.file import File
+from src.objects.packet import Packet
 
 
 @lru_cache(maxsize=256)

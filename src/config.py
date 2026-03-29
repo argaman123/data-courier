@@ -1,6 +1,6 @@
 from dynaconf import Dynaconf
 
-from logger import setup_logger
+from src.logger import setup_logger
 
 settings = Dynaconf(
     settings_files=["resources/settings.toml"],

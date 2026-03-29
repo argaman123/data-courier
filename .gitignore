@@ -1,5 +1,4 @@
-tests
-
+external
 # Byte-compiled / optimized / DLL files
 *.iml
 .idea/

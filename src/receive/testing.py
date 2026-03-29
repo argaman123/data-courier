@@ -2,8 +2,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from config import logger, settings
-from receive.partial_file import PartialFile
+from src.config import logger, settings
 
 # TODO <editor-fold desc="REMOVE TEST IN PROD">
 def test_and_reset(processor):
@@ -30,7 +29,7 @@ def test_and_reset(processor):
                 error = True
             processor.processing.pop(file_id)
     if error:
-        logger.error(f"Test failed. Max index distance was {PartialFile.max_packet_index_distance}")
+        logger.error(f"Test failed")
     else:
-        logger.success(f"All files arrived fully! Max index distance was {PartialFile.max_packet_index_distance}")
+        logger.success(f"All files arrived fully!")
 # TODO </editor-fold>

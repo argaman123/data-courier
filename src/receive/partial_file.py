@@ -3,16 +3,12 @@ from functools import lru_cache
 
 import zfec
 
-from objects.packet import Packet
-from config import settings
-from objects.file import File
+from src.objects.packet import Packet
+from src.config import settings
+from src.objects.file import File
 
 
 class PartialFile:
-    # TODO <editor-fold desc="REMOVE VARIABLE IN PROD">
-    max_packet_index_distance = 0
-    # TODO </editor-fold>
-
     def __init__(self):
         self.file_id: bytes | None = None
         self.decoder: zfec.Decoder | None = None
@@ -55,10 +51,6 @@ class PartialFile:
             chunk[packet.packet_index] = packet.payload
 
             if len(chunk) == packet.k:
-                # TODO <editor-fold desc="REMOVE VARIABLE IN PROD">
-                self.max_packet_index_distance = max(self.max_packet_index_distance, packet.packet_index - packet.k)
-                # TODO </editor-fold>
-
                 payload_list = self.decoder.decode(tuple(chunk.values()), tuple(chunk.keys()))
                 offset = packet.chunk_index * (packet.k * settings.payload_size)
                 for raw_payload in payload_list:

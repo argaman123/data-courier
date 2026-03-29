@@ -1,23 +1,23 @@
-import multiprocessing
+import multiprocessing as mp
 import sys
 import threading
 
 from loguru import logger
 
-max_context_size = 0
 
 def add_context(record):
-    global max_context_size
+    record["extra"]["thread"] = ""
+    record["extra"]["proc"] = ""
+
     thread_name = threading.current_thread().name
+    proc_name = mp.current_process().name
+    if proc_name != "MainProcess":
+        record["extra"]["proc"] = proc_name
     if thread_name != "MainThread":
-        max_context_size = max(max_context_size, len(thread_name))
-        record["extra"]["thread"] = f"{thread_name: <{max_context_size}}"
-        record["extra"]["proc"] = ""
-    else:
-        proc_name = multiprocessing.current_process().name
-        max_context_size = max(max_context_size, len(proc_name))
-        record["extra"]["thread"] = ""
-        record["extra"]["proc"] = f"{proc_name: <{max_context_size}}"
+        thread = thread_name
+        if record["extra"]["proc"]:
+            thread = ">" + thread
+        record["extra"]["thread"] = thread
 
 def setup_logger(level: str):
     logger.remove()

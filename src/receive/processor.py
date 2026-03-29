@@ -2,26 +2,26 @@ import copy
 from multiprocessing import shared_memory
 from multiprocessing.queues import Queue
 
-from config import (settings, logger)
-from objects.packet import Packet
-from receive.partial_file import PartialFile
-from receive.monitor import MonitoredProcess
-from receive.writer import Writer
+from src.config import (settings, logger)
+from src.objects.packet import Packet
+from src.receive.partial_file import PartialFile
+from src.receive.monitor import MonitoredProcess
+from src.receive.writer import Writer
 
 
 class Processor(MonitoredProcess):
-    def __init__(self, _id: str, offset_queue: Queue[tuple[int, int]]):
-        super().__init__(name=f"Processor-{_id}", daemon=True)
-        self.id = _id
+    def __init__(self, offset_queue: Queue[tuple[int, int]]):
+        super().__init__(name=f"Processor", daemon=True)
         self.offset_queue = offset_queue
         self.processing: dict[bytes, PartialFile] = {}
         self.writer: Writer | None = None
 
     def run(self):
-        self.writer = Writer(self.id, self)
+        super().run()
+        self.writer = Writer()
         self.writer.start()
-        shm = shared_memory.SharedMemory(name=settings.shm_prefix + self.id)
-        logger.info(f"Processor {self.id} is running")
+        shm = shared_memory.SharedMemory(name=settings.shm_name)
+        logger.info(f"Processor is running")
         while True:
             offset, size = self.offset_queue.get()
             actual_bytes = shm.buf[offset:offset + size]

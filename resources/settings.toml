@@ -1,25 +1,30 @@
 [default]
-log_level = 'DEBUG'
+log_level = 'INFO'
 ip = '192.168.1.2'
 port = 55555
 
 #monitor_rate = false
 monitor_rate = 1 # in seconds
 
-pacer_target_speed = false
-#pacer_target_speed = 12_500_000 # 100Mbps
+#pacer_target_speed = false
+pacer_target_speed = 12_500_000 # 100Mbps
 pacer_batch_size = 100
 
 socket_buffer_size = 256_000_000
 receiver_buffer_size = 256_000_000
 payload_size = 1_400 # below ip fragmantation
-packets_multiplier = 3
+packets_multiplier = 1
 
 max_encoded_chunks = 100
 file_queue_size = 100
 enable_file_caching = false
 enlarge_tiny_files = true
 
-shm_prefix = 'shm_'
-input_folder = 'tests/input'
-output_folder = 'tests/output'
+shm_name = 'sender_shm'
+input_folder = 'external/input'
+temp_folder = 'external/temp'
+output_folder = 'external/output'
+
+file_changed_time = 1
+file_scan_delay = 1
+primary_queue_timeout = 1

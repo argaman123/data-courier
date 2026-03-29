@@ -1,23 +1,23 @@
-import hashlib
 import os
 import struct
 from pathlib import Path
 
-from config import settings
+from src.config import settings
 
 
 class File:
-    def __init__(self, path: Path):
+    def __init__(self, path: str, folder: Path = Path(settings.temp_folder)):
         self.path = path
+        self.file = folder / path
         self.id = os.urandom(8)
         self.header = self._encode_header()
-        self.size = len(self.header) + self.path.stat().st_size
+        self.size = len(self.header) + self.file.stat().st_size
         self.cached = False
         if settings.enable_file_caching:
             self.bytearray = bytearray(self.size)
 
     def _encode_header(self):
-        name_bytes = self.path.name.encode("utf-8")
+        name_bytes = str(self.path).encode("utf-8")
         return struct.pack(f'<H{len(name_bytes)}s', len(name_bytes), name_bytes)
 
     @staticmethod
@@ -34,7 +34,7 @@ class File:
                 yield offset, raw_bytes[offset:offset + size]
         else:
             offset = 0
-            with self.path.open("rb") as file:
+            with self.file.open("rb") as file:
                 data = self.header + file.read(size - len(self.header))
                 while data:
                     yield offset, data
@@ -49,12 +49,4 @@ class File:
         return self.size
 
     def __str__(self):
-        return self.path.name + f" [{self.id.hex()}]"
-
-    # TODO <editor-fold desc="REMOVE CHECKSUM IN PROD">
-    def checksum(self):
-        if self.cached:
-            return hashlib.sha256(self.extract_header(self.bytearray)[1]).digest()
-        else:
-            return hashlib.sha256(self.path.read_bytes()).digest()
-    # TODO </editor-fold>
+        return str(self.path) + f" [{self.id.hex()}]"

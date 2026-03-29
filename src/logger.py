@@ -16,7 +16,7 @@ def add_context(record):
     if thread_name != "MainThread":
         thread = thread_name
         if record["extra"]["proc"]:
-            thread = ">" + thread
+            thread = "->" + thread
         record["extra"]["thread"] = thread
 
 def setup_logger(level: str):

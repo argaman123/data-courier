@@ -18,6 +18,8 @@ def add_context(record):
         if record["extra"]["proc"]:
             thread = "->" + thread
         record["extra"]["thread"] = thread
+    if not record["extra"]["proc"] and not record["extra"]["thread"]:
+        record["extra"]["proc"] = "Main"
 
 def setup_logger(level: str):
     logger.remove()

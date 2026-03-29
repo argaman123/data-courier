@@ -10,7 +10,7 @@ from src.send.sender import Sender
 import multiprocessing as mp
 
 def _handle_shutdown(sig=None, _=None):
-    logger.info(f"Received signal {sig}, shutting down")
+    logger.success(f"Received signal {sig}, shutting down")
     for proc in processes:
         proc.terminate()
         proc.join()

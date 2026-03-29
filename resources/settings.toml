@@ -3,9 +3,6 @@ log_level = 'INFO'
 ip = '192.168.1.2'
 port = 55555
 
-#monitor_rate = false
-monitor_rate = 1 # in seconds
-
 #pacer_target_speed = false
 pacer_target_speed = 12_500_000 # 100Mbps
 pacer_batch_size = 100

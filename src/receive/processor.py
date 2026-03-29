@@ -1,4 +1,5 @@
 import copy
+import signal
 from multiprocessing import shared_memory, Process
 from multiprocessing.queues import Queue
 
@@ -16,7 +17,8 @@ class Processor(Process):
         self.writer: Writer | None = None
 
     def run(self):
-        super().run()
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+
         self.writer = Writer()
         self.writer.start()
         shm = shared_memory.SharedMemory(name=settings.shm_name)

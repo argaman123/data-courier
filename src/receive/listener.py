@@ -1,4 +1,5 @@
 import queue
+import signal
 import socket
 from multiprocessing import shared_memory, Process
 from multiprocessing.queues import Queue
@@ -14,7 +15,8 @@ class Listener(Process):
         self.offset_queue = offset_queue
 
     def run(self):
-        super().run()
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+
         shm = shared_memory.SharedMemory(name=settings.shm_name)
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, settings.socket_buffer_size)

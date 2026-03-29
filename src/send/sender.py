@@ -1,5 +1,6 @@
 import math, socket, time
 import re
+import signal
 from multiprocessing import Process
 from multiprocessing.queues import Queue
 import multiprocessing.sharedctypes as mp_types
@@ -28,6 +29,8 @@ class Sender(Process):
         self.pacer = Pacer(active_senders)
 
     def run(self):
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, settings.socket_buffer_size)
         logger.info(f"Sender for {self.folder} is running")

@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  receiver:
+  receive:
     image: data-courier:latest
     command: [ "python", "-m", "src.receive.main" ]
     deploy:

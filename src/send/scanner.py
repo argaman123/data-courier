@@ -79,7 +79,7 @@ class Scanner(Thread):
 
     def run(self):
         self.files = {}
-        logger.info(f"Started scanning {self.input_folder} for new self.files")
+        logger.info(f"Started scanning {self.input_folder}")
         while True:
             try:
                 current_files = set()

@@ -10,7 +10,7 @@ pacer_batch_size = 100
 socket_buffer_size = 256_000_000
 receiver_buffer_size = 256_000_000
 payload_size = 1_400 # below ip fragmantation
-packets_multiplier = 1
+packets_multiplier = 2
 
 max_encoded_chunks = 100
 file_queue_size = 100

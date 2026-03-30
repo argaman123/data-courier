@@ -6,6 +6,6 @@
 - [x]  Folder scanning for new complete files
 - [x]  Threads/Processes and pools
 - [x]  Prioritising
-- [ ]  Memory cleaning process
+- [x]  Memory cleaning process
 - [ ]  Error handling
 - [ ]  RabbitMQ

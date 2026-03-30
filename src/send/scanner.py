@@ -61,7 +61,7 @@ class Scanner(Thread):
         except FileNotFoundError:
             pass
 
-    def _move_file(self, file: Path, source_path: Path):
+    def _move_and_queue_file(self, file: Path, source_path: Path):
         try:
             target = self.temp_folder / file.relative_to(source_path)
             logger.debug(f"Moving {file} to {self.temp_folder}")

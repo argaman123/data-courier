@@ -80,9 +80,11 @@ class Scanner(Thread):
         self.queues[file.parent.name].put(str(file.relative_to(source_path)))
 
     def _requeue_temp_folder(self):
-        for file in self.temp_folder.iterdir():
-            logger.info(f"Re-queueing {file}")
-            self._queue_file(file, self.temp_folder)
+        for folder in self.queues.keys():
+            for path in (self.temp_folder / folder).iterdir():
+                if path.is_file():
+                    logger.info(f"Re-queueing {path}")
+                    self._queue_file(path, self.temp_folder)
 
 
     def run(self):

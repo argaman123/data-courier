@@ -76,14 +76,15 @@ class Scanner(Thread):
             logger.debug(f"{file} is still being modified, skipping for now... {e}")
 
     def _queue_file(self, file: Path, source_path: Path):
-        logger.info(f"Queueing {file}")
-        self.queues[file.parent.name].put(str(file.relative_to(source_path)))
+        relative_path = str(file.relative_to(source_path))
+        logger.info(f"Queueing {relative_path}")
+        self.queues[file.parent.name].put(relative_path)
 
     def _requeue_temp_folder(self):
         for folder in self.queues.keys():
             for path in (self.temp_folder / folder).iterdir():
                 if path.is_file():
-                    logger.info(f"Re-queueing {path}")
+                    logger.debug(f"Found existing {path}")
                     self._queue_file(path, self.temp_folder)
 
 

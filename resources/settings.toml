@@ -18,9 +18,9 @@ enable_file_caching = false
 enlarge_tiny_files = true
 
 shm_name = 'sender_shm'
-input_folder = 'external/input'
-temp_folder = 'external/temp'
-output_folder = 'external/output'
+input_folder = 'input'
+temp_folder = 'temp'
+output_folder = 'output'
 
 file_changed_time = 1
 file_scan_interval = 1

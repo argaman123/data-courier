@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  receiver:
+    image: data-courier:latest
+    command: [ "python", "-m" "src.receive.main" ]
+    deploy:
+      mode: replicated
+      replicas: 1
+
+    volumes:
+      - ./external/output:/app/output
+
+      - type: tmpfs
+        target: /dev/shm
+        tmpfs:
+          size: 256000000

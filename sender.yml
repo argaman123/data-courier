@@ -3,7 +3,7 @@ version: '3.8'
 services:
   sender:
     image: data-courier:latest
-    command: [ "python", "-m" "src.send.main" ]
+    command: [ "python", "-m", "src.send.main" ]
     deploy:
       mode: replicated
       replicas: 1

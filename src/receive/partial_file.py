@@ -24,9 +24,9 @@ class PartialFile:
         return self.file_id is not None and self.chunks_arrived == self.total_chunks
 
     def free_memory(self):
-        del self.chunks
-        del self.arrived
-        del self.bytearray
+        if self.chunks: del self.chunks
+        if self.arrived: del self.arrived
+        if self.bytearray: del self.bytearray
 
     def to_file(self):
         return File.extract_header(self.bytearray)

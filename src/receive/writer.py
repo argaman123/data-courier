@@ -1,17 +1,18 @@
-import threading, queue
+import queue
+from threading import Thread
 from pathlib import Path
 
 from src.config import settings, logger
 from src.receive.partial_file import PartialFile
 
 
-class Writer(threading.Thread):
+class Writer(Thread):
     def __init__(self):
         super().__init__(name="Writer", daemon=True)
         self.files: queue.Queue[PartialFile] = queue.Queue(maxsize=settings.file_queue_size)
 
     def run(self):
-        logger.info("Background disk writer thread started")
+        logger.info("Background disk writer started")
         while True:
             partial_file = self.files.get()
             (path, file_bytes) = partial_file.to_file()

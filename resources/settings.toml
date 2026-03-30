@@ -23,5 +23,5 @@ temp_folder = 'external/temp'
 output_folder = 'external/output'
 
 file_changed_time = 1
-file_scan_delay = 1
+file_scan_interval = 1
 primary_queue_timeout = 1

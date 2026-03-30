@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import math, socket, time
 import re
 import signal

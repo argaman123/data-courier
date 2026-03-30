@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import time
 import shutil
 from multiprocessing.queues import Queue

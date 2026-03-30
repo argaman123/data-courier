@@ -38,5 +38,3 @@ class Listener(Process):
             offset = (offset + size) % shm.size
             if offset + self.packet_size >= shm.size:
                 offset = 0
-
-            self.notify_monitor(size)

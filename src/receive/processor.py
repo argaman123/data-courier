@@ -37,5 +37,3 @@ class Processor(Process):
                     logger.info(f"Finished processing {self.processing[packet.file_id]}")
                     self.writer.files.put(copy.copy(self.processing[packet.file_id]))
                     self.processing[packet.file_id].free_memory()
-
-            self.notify_monitor(size)

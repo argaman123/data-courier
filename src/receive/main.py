@@ -23,6 +23,9 @@ def _create_shm():
 
 
 def _handle_shutdown(sig=None, _=None):
+    if mp.current_process().name != 'MainProcess':
+        sys.exit(0)
+
     logger.success(f"Received signal {sig}, shutting down")
     for proc in processes:
         proc.terminate()

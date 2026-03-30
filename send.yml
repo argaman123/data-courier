@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  sende:
+  send:
     image: data-courier:latest
     command: [ "python", "-m", "src.send.main" ]
     deploy:

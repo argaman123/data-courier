@@ -11,7 +11,7 @@ from pathlib import Path
 from src.config import settings, logger
 from src.objects.packet import Packet
 from src.send.encoder import generate_chunks, calc_k_m
-from src.objects.file import File
+from src.send.file import File
 from src.send.pacer import Pacer
 
 

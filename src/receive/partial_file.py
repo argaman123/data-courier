@@ -5,7 +5,7 @@ import zfec
 
 from src.objects.packet import Packet
 from src.config import settings
-from src.objects.file import File
+from src.send.file import File
 
 
 class PartialFile:

@@ -4,7 +4,7 @@ from functools import lru_cache
 import zfec
 
 from src.config import settings
-from src.objects.file import File
+from src.send.file import File
 from src.objects.packet import Packet
 
 

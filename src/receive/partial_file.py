@@ -21,6 +21,7 @@ class PartialFile:
 
         # For logging purposes
         self.missing_packets = 0
+        self.max_missing_packets = 0
 
     @property
     def complete(self):
@@ -46,8 +47,6 @@ class PartialFile:
         if self.arrived[packet.chunk_index]:
             return self.complete
 
-        if packet.packet_index >= packet.k:
-            self.missing_packets += (packet.packet_index + 1) - packet.k
 
         if packet.chunk_index not in self.chunks:
             self.chunks[packet.chunk_index] = {}
@@ -57,6 +56,10 @@ class PartialFile:
             chunk[packet.packet_index] = packet.payload
 
             if len(chunk) == packet.k:
+                missing_packets = (packet.packet_index + 1) - packet.k
+                if missing_packets > 0:
+                    self.missing_packets += missing_packets
+                    self.max_missing_packets = max(self.missing_packets, missing_packets)
                 payload_list = self.decoder.decode(tuple(chunk.values()), tuple(chunk.keys()))
                 offset = packet.chunk_index * (packet.k * settings.payload_size)
                 for raw_payload in payload_list:
@@ -81,5 +84,5 @@ class PartialFile:
     def __str__(self):
         missing_text = ""
         if self.missing_packets > 0:
-            missing_text = f", ~{self.missing_packets} missing packets"
-        return f"[{self.file_id.hex()}] ({self.chunks_arrived}/{self.total_chunks} chunks{missing_text})"
+            missing_text = f", worst chunk had ~{self.max_missing_packets} missing packets for a total of ~{self.missing_packets}"
+        return f"[{self.file_id.hex()}] ({self.chunks_arrived}/{self.total_chunks} chunks)" + missing_text

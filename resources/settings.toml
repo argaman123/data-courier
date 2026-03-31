@@ -26,3 +26,11 @@ file_changed_time = 1
 file_scan_interval = 1
 primary_queue_timeout = 1
 file_inactivity_timeout = 60
+
+[rabbitmq]
+rabbitmq_enabled = true
+rabbitmq_exchange = "courier"
+rabbitmq_routing_key_prefix = "courier"
+rabbitmq_host = "192.168.1.2"
+rabbitmq_port = 5672
+rabbitmq_retry_delay = 5

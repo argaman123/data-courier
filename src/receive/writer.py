@@ -4,11 +4,13 @@ from pathlib import Path
 
 from src.config import settings, logger
 from src.receive.partial_file import PartialFile
+from src.send.rabbitmq import RabbitMQ
 
 
 class Writer(Thread):
-    def __init__(self):
+    def __init__(self, rabbitmq: RabbitMQ):
         super().__init__(name="Writer", daemon=True)
+        self.rabbitmq = rabbitmq
         self.files: queue.Queue[PartialFile] = queue.Queue(maxsize=settings.file_queue_size)
 
     def run(self):
@@ -18,9 +20,10 @@ class Writer(Thread):
             (path, file_bytes) = partial_file.to_file()
             logger.info(f"Started saving {path}")
             file = Path(settings.output_folder) / path
-            file.parent.mkdir(exist_ok=True)
+            folder = file.parent
+            folder.mkdir(exist_ok=True)
             with open(file, 'wb') as f:
                 f.write(file_bytes)
             logger.success(f"Saved {path}")
-            self.files.task_done()
             del partial_file, file_bytes
+            self.rabbitmq.notify(folder.name, path)

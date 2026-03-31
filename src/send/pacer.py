@@ -5,7 +5,7 @@ from src.config import settings
 
 class Pacer:
     def __init__(self, active_senders: 'mp_types.Synchronized'):
-        if not settings.pacer_target_speed:
+        if not getattr(settings, 'pacer_target_speed', False):
             self.enabled = False
         else:
             self.enabled = True

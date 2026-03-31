@@ -7,5 +7,5 @@
 - [x]  Threads/Processes and pools
 - [x]  Prioritising
 - [x]  Memory cleaning process
+- [x]  RabbitMQ
 - [ ]  Error handling
-- [ ]  RabbitMQ

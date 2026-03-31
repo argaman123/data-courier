@@ -10,6 +10,7 @@ from src.objects.packet import Packet
 from src.receive.cleaner import Cleaner
 from src.receive.partial_file import PartialFile
 from src.receive.writer import Writer
+from src.send.rabbitmq import RabbitMQ
 
 
 class Processor(Process):
@@ -21,7 +22,9 @@ class Processor(Process):
     def run(self):
         signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-        writer = Writer()
+        rabbitmq = RabbitMQ()
+        rabbitmq.start()
+        writer = Writer(rabbitmq)
         writer.start()
         cleaner = Cleaner(self.processing)
         cleaner.start()

@@ -35,31 +35,29 @@ class Scanner(Thread):
         except (OSError, IOError):
             return True
 
-    def _process_file(self, file: Path):
+    def _check_file(self, file: Path):
         try:
             if file not in self.files:
                 logger.debug(f"Found {file}")
                 self.files[file] = self._sample_file(file)
-                return
+                return False
 
             current_time = time.time()
             if current_time - self.files[file][0] < self.file_changed_time:
-                return
+                return False
 
             current_sample = self._sample_file(file)
             if current_sample != self.files[file][1]:
                 self.files[file] = current_time, current_sample
                 logger.debug(f"{file} is still being written ({current_sample}), skipping for now...")
-                return
+                return False
 
             if self._is_locked(file):
                 logger.debug(f"{file} is locked, skipping for now...")
-                return
-            
-            self._move_and_queue_file(file, self.input_folder)
-            
+                return False
         except FileNotFoundError:
-            pass
+            return False
+        return True
 
     def _move_and_queue_file(self, file: Path, source_path: Path):
         try:
@@ -82,7 +80,10 @@ class Scanner(Thread):
 
     def _requeue_temp_folder(self):
         for folder in self.queues.keys():
-            for path in (self.temp_folder / folder).iterdir():
+            source_dir = (self.temp_folder / folder)
+            if not source_dir.is_dir():
+                continue
+            for path in source_dir.iterdir():
                 if path.is_file():
                     logger.debug(f"Found existing {path}")
                     self._queue_file(path, self.temp_folder)
@@ -100,7 +101,8 @@ class Scanner(Thread):
                         for path in folder.iterdir():
                             if path.is_file():
                                 current_files.add(path)
-                                self._process_file(path)
+                                if self._check_file(path):
+                                    self._move_and_queue_file(path, self.input_folder)
                     except FileNotFoundError:
                         self.folders.remove(folder)
 

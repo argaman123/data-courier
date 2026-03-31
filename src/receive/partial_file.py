@@ -19,6 +19,9 @@ class PartialFile:
         self.chunks_arrived = 0
         self.total_chunks = 0
 
+        # For logging purposes
+        self.missing_packets = 0
+
     @property
     def complete(self):
         return self.file_id is not None and self.chunks_arrived == self.total_chunks
@@ -42,6 +45,9 @@ class PartialFile:
 
         if self.arrived[packet.chunk_index]:
             return self.complete
+
+        if packet.packet_index >= packet.k:
+            self.missing_packets += (packet.packet_index + 1) - packet.k
 
         if packet.chunk_index not in self.chunks:
             self.chunks[packet.chunk_index] = {}
@@ -73,4 +79,7 @@ class PartialFile:
         return zfec.Decoder(k, m)
 
     def __str__(self):
-        return f"[{self.file_id.hex()}] ({self.chunks_arrived}/{self.total_chunks} chunks)"
+        missing_text = ""
+        if self.missing_packets > 0:
+            missing_text = f", ~{self.missing_packets} missing packets"
+        return f"[{self.file_id.hex()}] ({self.chunks_arrived}/{self.total_chunks} chunks{missing_text})"

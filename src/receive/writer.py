@@ -2,7 +2,7 @@ import queue
 from threading import Thread
 from pathlib import Path
 
-from src.config import settings, logger
+from src.common.config import settings, logger
 from src.receive.partial_file import PartialFile
 from src.send.rabbitmq import RabbitMQ
 

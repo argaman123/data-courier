@@ -6,7 +6,7 @@ import threading
 from multiprocessing.queues import Queue
 from pathlib import Path
 
-from src.config import settings, logger
+from src.common.config import settings, logger
 from src.send.scanner import Scanner
 from src.send.sender import Sender
 import multiprocessing as mp

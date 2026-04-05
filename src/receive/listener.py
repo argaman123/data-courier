@@ -5,8 +5,8 @@ import signal
 import socket
 from multiprocessing import shared_memory, Process
 from multiprocessing.queues import Queue
-from src.config import settings, logger
-from src.objects.packet import Packet
+from src.common.config import settings, logger
+from src.common.packet import Packet
 
 
 class Listener(Process):

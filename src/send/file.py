@@ -2,7 +2,7 @@ import os
 import struct
 from pathlib import Path
 
-from src.config import settings
+from src.common.config import settings
 
 
 class File:

@@ -7,7 +7,7 @@ import threading
 from multiprocessing import shared_memory
 from multiprocessing.queues import Queue
 
-from src.config import settings, logger
+from src.common.config import settings, logger
 from src.receive.listener import Listener
 from src.receive.processor import Processor
 

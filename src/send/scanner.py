@@ -6,7 +6,7 @@ from multiprocessing.queues import Queue
 from pathlib import Path
 from threading import Thread
 
-from src.config import settings, logger
+from src.common.config import settings, logger
 
 
 class Scanner(Thread):

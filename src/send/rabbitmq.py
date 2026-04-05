@@ -5,7 +5,7 @@ import pika
 from pika.delivery_mode import DeliveryMode
 from pika.exceptions import AMQPConnectionError, AMQPChannelError
 
-from src.config import logger, settings
+from src.common.config import logger, settings
 
 
 class RabbitMQ(Thread):

@@ -8,8 +8,8 @@ from multiprocessing.queues import Queue
 import multiprocessing.sharedctypes as mp_types
 from pathlib import Path
 
-from src.config import settings, logger
-from src.objects.packet import Packet
+from src.common.config import settings, logger
+from src.common.packet import Packet
 from src.send.encoder import generate_chunks, calc_k_m
 from src.send.file import File
 from src.send.pacer import Pacer

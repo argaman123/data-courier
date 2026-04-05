@@ -5,8 +5,8 @@ import signal
 from multiprocessing import shared_memory, Process
 from multiprocessing.queues import Queue
 
-from src.config import (settings, logger)
-from src.objects.packet import Packet
+from src.common.config import (settings, logger)
+from src.common.packet import Packet
 from src.receive.cleaner import Cleaner
 from src.receive.partial_file import PartialFile
 from src.receive.writer import Writer

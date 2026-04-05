@@ -3,8 +3,8 @@ from functools import lru_cache
 
 import zfec
 
-from src.objects.packet import Packet
-from src.config import settings
+from src.common.packet import Packet
+from src.common.config import settings
 from src.send.file import File
 
 

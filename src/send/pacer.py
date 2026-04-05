@@ -1,6 +1,6 @@
 import time
 import multiprocessing.sharedctypes as mp_types
-from src.config import settings
+from src.common.config import settings
 
 
 class Pacer:

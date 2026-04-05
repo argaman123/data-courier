@@ -1,7 +1,7 @@
 import time
 from threading import Thread, Lock
 
-from src.config import logger, settings
+from src.common.config import logger, settings
 from src.receive.partial_file import PartialFile
 
 

@@ -1,0 +1,21 @@
+[receive]
+output_folder = 'external/output'
+
+# Processor ----------------------
+shm.name = 'courier_send_shm'
+shm.size = 1_000_000_000 # Size of the shared memory pool used for storing raw packets until they are processed
+
+# Writer -------------------------
+writer.buffer_limit = 10_000_000_000 # Byte limit for the complete files queue before the halting the processor
+
+# Cleaner ------------------------
+cleaner.partial_file_expiry = 60 # Seconds of not receving packets of a file before it is cleaned from memory
+
+# RabbitMQ Module ----------------
+[receive.rabbitmq]
+enabled = false # Toggle to send file path to a RabbitMQ queue after it is successfully saved
+host = "192.168.1.2"
+port = 5672
+exchange_name = "courier"
+routing_key_prefix = "courier"
+reconnect_delay = 5 # Seconds to wait before trying to reconnect to RabbitMQ

@@ -1,0 +1,22 @@
+[send]
+input_folder = 'external/input'
+temp_folder = 'external/temp'
+
+# Sender -------------------------
+sender.enable_file_caching = false # Toggle to keep file data in memory after reading it once
+
+# Encoder ------------------------
+encoder.packets_multiplier = 2 # Multiplier for total packets sent per file (3 means ~67% redundancy)
+encoder.enlarge_tiny_files = true # Toggle to pad small files to a minimum size to help them survive packet loss
+encoder.buffer_limit = 100_000_000 # Maximum bytes the encoder will process at once before sending packets
+
+# Scanner ------------------------
+scanner.file_ready_delay = 1 # Seconds a file must remain unchanged before it is considered ready for transfer
+scanner.folder_polling_interval = 1 # Seconds between each folder scan for new or stable files
+
+
+# Pacer Module -------------------
+[send.pacer]
+enabled = true # Toggle to limit the sender to maintain a target speed
+target_speed = 12_500_000 # Bytes per second maximum speed
+batch_limit = 100_000 # Bytes allowed to be sent before the speed limit is enforced

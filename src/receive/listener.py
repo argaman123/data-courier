@@ -10,31 +10,36 @@ from src.common.packet import Packet
 
 
 class Listener(Process):
-    packet_size = settings.payload_size + Packet.header_size
+    buffer_size = settings.socket.get('buffer_size', 256_000_000)
+    ip, port = settings.socket.ip, settings.socket.port
 
-    def __init__(self, offset_queue: Queue[tuple[int, int]]):
+    def __init__(self, offset_queue: Queue[tuple[int, int]], shm_name: str):
         super().__init__(name=f"Listener", daemon=True)
         self.offset_queue = offset_queue
+        self.shm = shared_memory.SharedMemory(name=shm_name)
+
+    def initialize_socket(self):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self.buffer_size)
+        sock.bind((self.ip, self.port))
+        return sock
 
     def run(self):
         signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-        shm = shared_memory.SharedMemory(name=settings.shm_name)
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, settings.socket_buffer_size)
-        sock.bind((settings.ip, settings.port))
+        sock = self.initialize_socket()
+        logger.info(f"Listener is running on {sock.getsockname()}")
 
-        logger.info(f"Listener is running on {settings.ip}:{settings.port}")
         offset = 0
         while True:
-            size = sock.recv_into(shm.buf[offset: offset + self.packet_size])
+            size = sock.recv_into(self.shm.buf[offset: offset + Packet.packet_size])
             data = (offset, size)
             try:
                 self.offset_queue.put_nowait(data)
             except queue.Full:
-                logger.warning("Processor is too slow, waiting for it to catch up..")
+                logger.warning("Processor is too slow, waiting for it to catch up...")
                 self.offset_queue.put(data)
 
-            offset = (offset + size) % shm.size
-            if offset + self.packet_size >= shm.size:
+            offset = (offset + size) % self.shm.size
+            if offset + Packet.packet_size >= self.shm.size:
                 offset = 0

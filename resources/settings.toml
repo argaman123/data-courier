@@ -1,36 +1,7 @@
 [default]
 log_level = 'INFO'
-ip = '192.168.1.2'
-port = 55555
+socket.ip = '192.168.1.2'
+socket.port = 55555
+socket.buffer_size = 256_000_000 # Maximum bytes the OS can hold for the network card
 
-#pacer_target_speed = false
-pacer_target_speed = 12_500_000 # 100Mbps
-pacer_batch_size = 100
-
-socket_buffer_size = 256_000_000
-receiver_buffer_size = 256_000_000
-payload_size = 1_400 # below ip fragmantation
-packets_multiplier = 2
-
-max_encoded_chunks = 100
-file_queue_size = 100
-enable_file_caching = false
-enlarge_tiny_files = true
-
-shm_name = 'sender_shm'
-input_folder = 'input'
-temp_folder = 'temp'
-output_folder = 'output'
-
-file_changed_time = 1
-file_scan_interval = 1
-primary_queue_timeout = 1
-file_inactivity_timeout = 60
-
-[rabbitmq]
-rabbitmq_enabled = true
-rabbitmq_exchange = "courier"
-rabbitmq_routing_key_prefix = "courier"
-rabbitmq_host = "192.168.1.2"
-rabbitmq_port = 5672
-rabbitmq_retry_delay = 5
+payload_size = 1_400 # Bytes of file data per packet; kept under 1.5KB to prevent IP fragmentation

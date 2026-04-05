@@ -40,7 +40,7 @@ class PartialFile:
             self.file_id = packet.file_id
             self.decoder = self._get_decoder(packet.k, packet.m)
             self.file_size = packet.file_size
-            self.total_chunks = math.ceil(self.file_size / (packet.k * settings.payload_size))
+            self.total_chunks = math.ceil(self.file_size / (packet.k * Packet.payload_size))
             self.bytearray = bytearray(self.file_size)
             self.arrived = bytearray(self.total_chunks)
 
@@ -61,7 +61,7 @@ class PartialFile:
                     self.missing_packets += missing_packets
                     self.max_missing_packets = max(self.missing_packets, missing_packets)
                 payload_list = self.decoder.decode(tuple(chunk.values()), tuple(chunk.keys()))
-                offset = packet.chunk_index * (packet.k * settings.payload_size)
+                offset = packet.chunk_index * (packet.k * Packet.payload_size)
                 for raw_payload in payload_list:
                     if offset + len(raw_payload) > self.file_size:
                         payload = raw_payload[:self.file_size - offset]
@@ -86,3 +86,6 @@ class PartialFile:
         if self.missing_packets > 0:
             missing_text = f", worst chunk had ~{self.max_missing_packets} missing packets for a total of ~{self.missing_packets}"
         return f"[{self.file_id.hex()}] ({self.chunks_arrived}/{self.total_chunks} chunks)" + missing_text
+
+    def __len__(self):
+        return self.file_size

@@ -2,6 +2,8 @@ import dataclasses
 import struct
 from typing import ClassVar
 
+from src.common.config import settings
+
 
 @dataclasses.dataclass
 class Packet:
@@ -16,6 +18,8 @@ class Packet:
     # noinspection SpellCheckingInspection
     format: ClassVar[str] = '<8sQBBIB'
     header_size: ClassVar[int] = struct.calcsize(format)
+    payload_size: ClassVar[int] = settings.get('payload_size', 1400)
+    packet_size: ClassVar[int] = payload_size + header_size
 
     def __bytes__(self) -> bytes:
         return (struct.pack(self.format, self.file_id, self.file_size, self.k - 1, self.m - 1, self.chunk_index, self.packet_index)

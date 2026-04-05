@@ -3,14 +3,10 @@ version: '3.8'
 services:
   receive:
     image: ghcr.io/argaman123/data-courier:latest
-    command: [ "python", "-m", "src.receive.main" ]
-    deploy:
-      mode: replicated
-      replicas: 1
-
+    environment:
+      - ENV_FOR_DYNACONF=receive
     volumes:
-      - ./external/output:/app/output
-
+      - ./external/output:/app/external/output
       - type: tmpfs
         target: /dev/shm
         tmpfs:

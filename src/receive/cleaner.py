@@ -6,6 +6,8 @@ from src.receive.partial_file import PartialFile
 
 
 class Cleaner(Thread):
+    partial_file_expiry = settings.get('cleaner', {}).get('partial_file_expiry', 60)
+
     def __init__(self, processing: dict[bytes, PartialFile]):
         super().__init__(name="Cleaner", daemon=True)
         self.processing = processing
@@ -35,4 +37,4 @@ class Cleaner(Thread):
                     file.free_memory()
                 else:
                     logger.debug(f"Cleaning completed {file}")
-            time.sleep(settings.file_inactivity_timeout)
+            time.sleep(self.partial_file_expiry)

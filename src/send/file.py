@@ -6,14 +6,16 @@ from src.common.config import settings
 
 
 class File:
-    def __init__(self, path: str, folder: Path = Path(settings.temp_folder)):
+    caching_enabled = settings.get('sender', {}).get('enable_file_caching', False)
+
+    def __init__(self, path: str, folder: Path):
         self.path = path
         self.file = folder / path
         self.id = os.urandom(8)
         self.header = self._encode_header()
         self.size = len(self.header) + self.file.stat().st_size
         self.cached = False
-        if settings.enable_file_caching:
+        if self.caching_enabled:
             self.bytearray = bytearray(self.size)
 
     def _encode_header(self):
@@ -38,11 +40,11 @@ class File:
                 data = self.header + file.read(size - len(self.header))
                 while data:
                     yield offset, data
-                    if settings.enable_file_caching:
+                    if self.caching_enabled:
                         self.bytearray[offset:offset + len(data)] = data
                     offset += len(data)
                     data = file.read(size)
-            if settings.enable_file_caching:
+            if self.caching_enabled:
                 self.cached = True
 
     def __len__(self):

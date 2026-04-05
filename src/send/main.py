@@ -11,26 +11,28 @@ from src.send.scanner import Scanner
 from src.send.sender import Sender
 import multiprocessing as mp
 
-def _handle_shutdown(sig=None, _=None):
-    if mp.current_process().name != 'MainProcess':
-        sys.exit(0)
+input_folder = settings.input_folder
 
-    logger.success(f"Received signal {sig}, shutting down")
-    for proc in processes:
-        proc.terminate()
-        proc.join()
+def main():
+    def handle_shutdown(sig=None, _=None):
+        if mp.current_process().name != 'MainProcess':
+            sys.exit(0)
 
-    shutdown_event.set()
-    sys.exit()
+        logger.success(f"Received signal {sig}, shutting down")
+        for proc in processes:
+            proc.terminate()
+            proc.join()
 
+        shutdown_event.set()
+        sys.exit()
 
-if __name__ == "__main__":
     active_senders = mp.Value('i', 0)
-    queues: dict[str, Queue[str]] = {str(folder.name): mp.Queue() for folder in Path(settings.input_folder).iterdir() if folder.is_dir()}
+    queues: dict[str, Queue[str]] = {str(folder.name): mp.Queue() for folder in Path(input_folder).iterdir() if
+                                     folder.is_dir()}
 
     shutdown_event = threading.Event()
-    signal.signal(signal.SIGTERM, _handle_shutdown)
-    signal.signal(signal.SIGINT, _handle_shutdown)
+    signal.signal(signal.SIGTERM, handle_shutdown)
+    signal.signal(signal.SIGINT, handle_shutdown)
 
     processes = []
     for folder in queues:
@@ -45,4 +47,7 @@ if __name__ == "__main__":
         for _proc in processes:
             if not _proc.is_alive():
                 logger.critical(f"{_proc.name} crashed, shutting down")
-                _handle_shutdown()
+                handle_shutdown()
+
+if __name__ == "__main__":
+    main()

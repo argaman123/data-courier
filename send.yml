@@ -3,11 +3,8 @@ version: '3.8'
 services:
   send:
     image: ghcr.io/argaman123/data-courier:latest
-    command: [ "python", "-m", "src.send.main" ]
-    deploy:
-      mode: replicated
-      replicas: 1
-
+    environment:
+      - ENV_FOR_DYNACONF=send
     volumes:
-      - ./external/input:/app/input
-      - ./external/temp:/app/temp
+      - ./external/input:/app/external/input
+      - ./external/temp:/app/external/temp

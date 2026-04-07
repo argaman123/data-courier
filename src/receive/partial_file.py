@@ -49,7 +49,7 @@ class PartialFile:
             missing_packets = (packet.packet_index + 1) - packet.k
             if missing_packets > 0:
                 self.missing_packets += missing_packets
-                self.max_missing_packets = max(self.missing_packets, missing_packets)
+                self.max_missing_packets = max(self.max_missing_packets, missing_packets)
             payload_list = self.decoder.decode(tuple(chunk.values()), tuple(chunk.keys()))
             offset = packet.chunk_index * (packet.k * Packet.payload_size)
             for raw_payload in payload_list:

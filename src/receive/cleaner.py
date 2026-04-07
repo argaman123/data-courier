@@ -19,22 +19,23 @@ class Cleaner(Thread):
             self.files[file_id] = True
 
     def run(self):
-        logger.info("Background memory cleaner started")
-        while True:
-            deleted_files: list[PartialFile] = []
-            with self.lock:
-                for file_id in list(self.files.keys()):
-                    if self.files[file_id]:
-                        self.files[file_id] = False
+        with logger.catch(message="Unexpected error occurred, shutting down..."):
+            logger.info("Background memory cleaner started")
+            while True:
+                deleted_files: list[PartialFile] = []
+                with self.lock:
+                    for file_id in list(self.files.keys()):
+                        if self.files[file_id]:
+                            self.files[file_id] = False
+                        else:
+                            deleted_file = self.processing.pop(file_id, None)
+                            if deleted_file:
+                                deleted_files.append(deleted_file)
+                            del self.files[file_id]
+                for file in deleted_files:
+                    if not file.complete:
+                        logger.warning(f"Received incomplete file {file}")
+                        file.free_memory()
                     else:
-                        deleted_file = self.processing.pop(file_id, None)
-                        if deleted_file:
-                            deleted_files.append(deleted_file)
-                        del self.files[file_id]
-            for file in deleted_files:
-                if not file.complete:
-                    logger.warning(f"Received incomplete file {file}")
-                    file.free_memory()
-                else:
-                    logger.debug(f"Cleaning completed {file}")
-            time.sleep(self.partial_file_expiry)
+                        logger.debug(f"Cleaning completed {file}")
+                time.sleep(self.partial_file_expiry)

@@ -1,21 +1,19 @@
 import time
 import multiprocessing.sharedctypes as mp_types
-from src.common.config import settings, logger
+from src.common.config import settings
 
 
 class Pacer:
     def __init__(self, active_senders: 'mp_types.Synchronized'):
-        if not settings.get("pacer") or not settings.get("pacer").get("enabled"):
-            self.enabled = False
-        else:
-            self.enabled = True
+        self.enabled = settings.get("pacer", {}).get("enabled", False)
+
+        if self.enabled:
             self.batch_limit = settings.pacer.batch_limit
             self.target_speed = settings.pacer.target_speed
 
             self.start_time = time.perf_counter()
             self.bytes_sent = 0
             self.active_senders = active_senders
-            logger.info(f"Pacer module is enabled, maintaining {self.target_speed / 1000 ** 2:.2f}MB/s")
 
     def reset(self):
         self.bytes_sent = 0

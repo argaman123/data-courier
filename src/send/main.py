@@ -3,8 +3,10 @@ from __future__ import annotations
 import signal
 import sys
 import threading
+from multiprocessing import Process
 from multiprocessing.queues import Queue
 from pathlib import Path
+from threading import Thread
 
 from src.common.config import settings, logger
 from src.send.scanner import Scanner
@@ -19,9 +21,10 @@ def main():
             sys.exit(0)
 
         logger.success(f"Received signal {sig}, shutting down")
-        for proc in processes:
-            proc.terminate()
-            proc.join()
+        for task in tasks:
+            if isinstance(task, Process):
+                task.terminate()
+            task.join(timeout=1)
 
         shutdown_event.set()
         sys.exit()
@@ -34,19 +37,20 @@ def main():
     signal.signal(signal.SIGTERM, handle_shutdown)
     signal.signal(signal.SIGINT, handle_shutdown)
 
-    processes = []
+    tasks: list[Thread | Process] = []
     for folder in queues:
         sender = Sender(folder, queues[folder], active_senders)
-        processes.append(sender)
+        tasks.append(sender)
         sender.start()
 
     scanner = Scanner(queues)
+    tasks.append(scanner)
     scanner.start()
 
     while not shutdown_event.wait(timeout=1):
-        for _proc in processes:
-            if not _proc.is_alive():
-                logger.critical(f"{_proc.name} crashed, shutting down")
+        for _task in tasks:
+            if not _task.is_alive():
+                logger.critical(f"{_task.name} crashed, shutting down")
                 handle_shutdown()
 
 if __name__ == "__main__":

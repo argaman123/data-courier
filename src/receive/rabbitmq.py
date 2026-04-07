@@ -11,10 +11,9 @@ from src.common.config import logger, settings
 class RabbitMQ(Thread):
     def __init__(self):
         super().__init__(name="RabbitMQ", daemon=True)
-        if not settings.get("rabbitmq") or not settings.get("rabbitmq").get("enabled"):
-            self.enabled = False
-        else:
-            self.enabled = True
+        self.enabled = settings.get("rabbitmq", {}).get("enabled", False)
+
+        if self.enabled:
             self.host = settings.rabbitmq.host
             self.port = settings.rabbitmq.port
             self.exchange_name = settings.rabbitmq.get("exchange_name", "courier")
@@ -25,11 +24,10 @@ class RabbitMQ(Thread):
 
 
     def notify(self, folder: str, path: str):
-        if self.enabled:
-            self.messages.put((folder, path))
+        self.messages.put((folder, path))
 
     def run(self):
-        while self.enabled:
+        while True:
             try:
                 connection = pika.BlockingConnection(pika.ConnectionParameters(host=self.host, port=self.port, heartbeat=60))
                 channel = connection.channel()
@@ -60,6 +58,6 @@ class RabbitMQ(Thread):
             except AMQPConnectionError:
                 logger.error(f"Connection failed to RabbitMQ ({self.host}:{self.port}), retrying in {self.reconnect_delay} seconds...")
                 time.sleep(self.reconnect_delay)
-            except Exception as e:
-                logger.error(f"Unexpected error: {e}, retrying in {self.reconnect_delay} seconds...")
+            except pika.exceptions.AMQPError as e:
+                logger.error(f"Unexpected error: {e}. Reconnecting in {self.reconnect_delay} seconds...")
                 time.sleep(self.reconnect_delay)

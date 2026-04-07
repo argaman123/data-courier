@@ -98,23 +98,24 @@ class Scanner(Thread):
         logger.info(f"Started scanning {self.input}")
         self._requeue_temp_folder()
         while True:
-            try:
-                current_files = set()
-                for folder in self.folders.copy():
-                    try:
-                        for path in folder.iterdir():
+            current_files = set()
+            for folder in self.folders.copy():
+                try:
+                    for path in folder.iterdir():
+                        try:
                             if path.is_file():
                                 current_files.add(path)
                                 if self._check_file(path):
                                     self._move_and_queue_file(path, self.input)
-                    except FileNotFoundError:
-                        self.folders.remove(folder)
-
-                # Clean manually deleted files
-                for path in self.files:
-                    if path not in current_files:
-                        del self.files[path]
-            except RuntimeError as e:
-                logger.error(f"Error while scanning {self.input}: {e}")
-
+                        except (OSError, RuntimeError) as e:
+                            logger.warning(f"Error while checking {path}: {e}")
+                except FileNotFoundError:
+                    logger.info(f"Stopped scanning {folder}, since it no longer exists")
+                    self.folders.remove(folder)
+                except OSError as e:
+                    logger.warning(f"Error while scanning {folder}: {e}")
+            # Clean manually deleted files
+            for path in list(self.files.keys()):
+                if path not in current_files:
+                    del self.files[path]
             time.sleep(self.folder_polling_interval)

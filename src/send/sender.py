@@ -29,6 +29,7 @@ class Sender(Process):
     ip, port = settings.socket.ip, settings.socket.port
 
     sock: socket.socket
+    pacer: Pacer
     temp_path: Path
 
     def __init__(self, folder: str, queue: Queue[str], active_senders: 'mp_types.Synchronized'):
@@ -42,10 +43,10 @@ class Sender(Process):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.buffer_size)
         self.sock.connect((self.ip, self.port))
+        self.pacer = Pacer(self.active_senders)
         self.temp_path = Path(self.temp_folder)
 
     def send_file(self, file: File, sock: socket.socket):
-        pacer = Pacer(self.active_senders)
         k, m = calc_k_m(len(file))
         passes = math.ceil(m/k)
         chunks_amount = math.ceil(len(file) / (k * Packet.payload_size))
@@ -57,7 +58,7 @@ class Sender(Process):
             for packet in generate_chunks(file, pass_num):
                 size += len(packet)
                 sock.send(bytes(packet))
-                pacer.wait_if_needed(len(packet))
+                self.pacer.wait_if_needed(len(packet))
             elapsed = time.perf_counter() - start_time
             if elapsed > 0:
                 logger.info(f"Sent {file} (pass {pass_num + 1}/{passes}) at "
@@ -71,6 +72,7 @@ class Sender(Process):
             logger.info(f"Sender for {self.folder} is running")
 
             while True:
+                self.pacer.reset()
                 file = self.queue.get()
                 path = self.temp_path / file
 

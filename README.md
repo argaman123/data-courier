@@ -8,4 +8,5 @@
 - [x]  Prioritising
 - [x]  Memory cleaning process
 - [x]  RabbitMQ
-- [ ]  Error handling
+- [x]  Error handling
+- [ ]  Proper Documentation

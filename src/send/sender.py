@@ -30,7 +30,6 @@ class Sender(Process):
         super().__init__(name=f"{to_camel_case(folder)}Sender", daemon=True)
         self.temp = Path(self.temp_folder)
 
-        self.socket: socket.socket | None = None
         self.folder = folder
         self.queue = queue
         self.active_senders = active_senders
@@ -42,7 +41,8 @@ class Sender(Process):
         sock.connect((self.ip, self.port))
         return sock
 
-    def send_file(self, file: File):
+    def send_file(self, file: File, sock: socket.socket):
+        self.pacer.reset()
         k, m = calc_k_m(len(file))
         passes = math.ceil(m/k)
         chunks_amount = math.ceil(len(file) / (k * Packet.payload_size))
@@ -53,7 +53,7 @@ class Sender(Process):
             start_time = time.perf_counter()
             for packet in generate_chunks(file, pass_num):
                 size += len(packet)
-                self.socket.send(bytes(packet))
+                sock.send(bytes(packet))
                 self.pacer.wait_if_needed(len(packet))
             elapsed = time.perf_counter() - start_time
             if elapsed > 0:
@@ -63,7 +63,7 @@ class Sender(Process):
     def run(self):
         signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-        self.socket = self.initialize_socket()
+        sock = self.initialize_socket()
         logger.info(f"Sender for {self.folder} is running")
 
         while True:
@@ -73,7 +73,7 @@ class Sender(Process):
                 self.active_senders.value += 1
 
             path = self.temp / file
-            self.send_file(File(file, self.temp))
+            self.send_file(File(file, self.temp), sock)
             path.unlink()
 
             with self.active_senders.get_lock():

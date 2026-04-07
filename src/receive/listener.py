@@ -16,7 +16,7 @@ class Listener(Process):
     def __init__(self, offset_queue: Queue[tuple[int, int]], shm_name: str):
         super().__init__(name=f"Listener", daemon=True)
         self.offset_queue = offset_queue
-        self.shm = shared_memory.SharedMemory(name=shm_name)
+        self.shm_name = shm_name
 
     def initialize_socket(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -27,12 +27,15 @@ class Listener(Process):
     def run(self):
         signal.signal(signal.SIGINT, signal.SIG_IGN)
 
+        buffer = shared_memory.SharedMemory(name=self.shm_name).buf
+        if buffer is None:
+            raise RuntimeError("Processor's shared memory buffer is missing")
         sock = self.initialize_socket()
         logger.info(f"Listener is running on {sock.getsockname()}")
 
         offset = 0
         while True:
-            size = sock.recv_into(self.shm.buf[offset: offset + Packet.packet_size])
+            size = sock.recv_into(buffer[offset: offset + Packet.packet_size])
             data = (offset, size)
             try:
                 self.offset_queue.put_nowait(data)
@@ -40,6 +43,6 @@ class Listener(Process):
                 logger.warning("Processor is too slow, waiting for it to catch up...")
                 self.offset_queue.put(data)
 
-            offset = (offset + size) % self.shm.size
-            if offset + Packet.packet_size >= self.shm.size:
+            offset = (offset + size) % len(buffer)
+            if offset + Packet.packet_size >= len(buffer):
                 offset = 0

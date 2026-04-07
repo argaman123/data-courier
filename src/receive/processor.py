@@ -5,7 +5,7 @@ import signal
 from multiprocessing import shared_memory, Process
 from multiprocessing.queues import Queue
 
-from src.common.config import (settings, logger)
+from src.common.config import logger
 from src.common.packet import Packet
 from src.common.sized_queue import SizedQueue
 from src.receive.cleaner import Cleaner
@@ -18,30 +18,34 @@ class Processor(Process):
     def __init__(self, offset_queue: Queue[tuple[int, int]], shm_name: str):
         super().__init__(name=f"Processor", daemon=True)
         self.offset_queue = offset_queue
-        self.shm = shared_memory.SharedMemory(name=shm_name)
-        self.processing: dict[bytes, PartialFile] = {}
+        self.shm_name = shm_name
 
     def run(self):
         signal.signal(signal.SIGINT, signal.SIG_IGN)
+        buffer = shared_memory.SharedMemory(name=self.shm_name).buf
+        if buffer is None:
+            raise RuntimeError("Processor's shared memory buffer is missing")
+
+        processing: dict[bytes, PartialFile] = {}
 
         rabbitmq = RabbitMQ()
         rabbitmq.start()
         writer = Writer(rabbitmq)
         writer.start()
-        cleaner = Cleaner(self.processing)
+        cleaner = Cleaner(processing)
         cleaner.start()
 
         logger.info(f"Processor is running")
         while True:
             offset, size = self.offset_queue.get()
-            actual_bytes = self.shm.buf[offset:offset + size]
+            actual_bytes = buffer[offset:offset + size]
             packet = Packet.from_bytes(actual_bytes.tobytes())
             cleaner.register(packet.file_id)
             with cleaner.lock:
-                if packet.file_id not in self.processing:
+                if packet.file_id not in processing:
                     logger.info(f"Started processing {packet}")
-                    self.processing[packet.file_id] = PartialFile()
-                current_file = self.processing[packet.file_id]
+                    processing[packet.file_id] = PartialFile(packet)
+                current_file = processing[packet.file_id]
                 is_complete = False
                 if not current_file.complete:
                     is_complete = current_file.process(packet)

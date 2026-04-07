@@ -3,7 +3,7 @@ from threading import Thread
 from pathlib import Path
 
 from src.common.config import settings, logger
-from src.common.sized_queue import MemoryBoundedQueue
+from src.common.sized_queue import SizedQueue
 from src.receive.partial_file import PartialFile
 from src.receive.rabbitmq import RabbitMQ
 
@@ -15,7 +15,7 @@ class Writer(Thread):
     def __init__(self, rabbitmq: RabbitMQ):
         super().__init__(name="Writer", daemon=True)
         self.rabbitmq = rabbitmq
-        self.files: MemoryBoundedQueue[PartialFile] = MemoryBoundedQueue(self.buffer_limit)
+        self.files: SizedQueue[PartialFile] = SizedQueue(self.buffer_limit)
         self.output = Path(self.output_folder)
 
     def run(self):

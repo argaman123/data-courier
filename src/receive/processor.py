@@ -7,7 +7,7 @@ from multiprocessing.queues import Queue
 
 from src.common.config import (settings, logger)
 from src.common.packet import Packet
-from src.common.sized_queue import MemoryBoundedQueue
+from src.common.sized_queue import SizedQueue
 from src.receive.cleaner import Cleaner
 from src.receive.partial_file import PartialFile
 from src.receive.writer import Writer
@@ -50,7 +50,7 @@ class Processor(Process):
                 current_file_copy = copy.copy(current_file)
                 try:
                     writer.files.put_nowait(current_file_copy, current_file_copy.file_size)
-                except MemoryBoundedQueue.Full:
+                except SizedQueue.Full:
                     logger.warning("Writer is too slow, waiting for it to catch up...")
                     writer.files.put(current_file_copy, current_file_copy.file_size)
                 current_file.free_memory()

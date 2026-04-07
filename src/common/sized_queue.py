@@ -4,7 +4,7 @@ from typing import TypeVar, Generic
 
 T = TypeVar('T')
 
-class MemoryBoundedQueue(Generic[T]):
+class SizedQueue(Generic[T]):
     class Full(Exception):
         pass
 
@@ -35,7 +35,7 @@ class MemoryBoundedQueue(Generic[T]):
     def put_nowait(self, item: T, size: int):
         with self.condition:
             if self.full():
-                raise MemoryBoundedQueue.Full()
+                raise SizedQueue.Full()
 
             self._add_item(item, size)
 

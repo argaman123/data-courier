@@ -8,3 +8,5 @@ services:
     volumes:
       - ./external/input:/app/external/input
       - ./external/temp:/app/external/temp
+      - ./src:/app/src
+      - ./resources:/app/resources

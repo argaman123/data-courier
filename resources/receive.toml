@@ -3,12 +3,18 @@ output_folder = 'external/output'
 
 # Processor ----------------------
 shm.name = 'courier_send_shm'
-shm.size = 1_000_000_000 # Size of the shared memory pool used for storing raw packets until they are processed
+# Higher values allow the processor to handle heavy incoming bursts without halting the listener.
+# This absorbs sudden network spikes but cannot compensate for a sender that is consistently too fast for the processor.
+shm.size = 1_000_000_000 # Size of the shared memory pool used for storing unprocessed packets before halting the listener
 
 # Writer -------------------------
-writer.buffer_limit = 10_000_000_000 # Byte limit for the complete files queue before the halting the processor
+# Higher values allow the writer more time to catch up with the processor, at the cost of (potentialy) increased memory usage.
+# This only provides better tolerance against temporary disk freezes, since generely disks are fast enough.
+writer.buffer_limit = 10_000_000_000 # Minimum size of complete files waiting in queue before halting the processor
 
 # Cleaner ------------------------
+# Higher values allow delayed packets more time to arrive and complete a file.
+# This is largely a theoretical limit, as packets generally arrive with minimal gaps.
 cleaner.partial_file_expiry = 60 # Seconds of not receving packets of a file before it is cleaned from memory
 
 # RabbitMQ Module ----------------
@@ -18,4 +24,4 @@ host = "192.168.1.2"
 port = 5672
 exchange_name = "courier"
 routing_key_prefix = "courier"
-reconnect_delay = 5 # Seconds to wait before trying to reconnect to RabbitMQ
+reconnect_delay = 5

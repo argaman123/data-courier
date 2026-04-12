@@ -3,20 +3,36 @@ input_folder = 'external/input'
 temp_folder = 'external/temp'
 
 # Sender -------------------------
+# Enabling this would make subsequent passes slightly faster on slower disks,
+#   but is somewhat negligable compared to encoding and throttling.
 sender.enable_file_caching = false # Toggle to keep file data in memory after reading it once
 
 # Encoder ------------------------
+# Higher values mean higher redundancy against missing packets but greatly degrades performance.
+# It accepts decimal values, and rounds it up to choose the total pass count. (making the last pass smaller than the rest)
 encoder.packets_multiplier = 2 # Multiplier for total packets sent per file (3 means ~67% redundancy)
-encoder.enlarge_tiny_files = true # Toggle to pad small files to a minimum size to help them survive packet loss
-encoder.buffer_limit = 100_000_000 # Maximum bytes the encoder will process at once before sending packets
+# Enabling this makes files that are smaller than the minimal chunk size (depends on the payload size and the multiplier)
+#   to be split and padded into two larger chunks.
+encoder.enlarge_tiny_files = true # Toggle to pad small files to a minimum size to help them survive packet loss bursts
+# Higher values maximize resilience against packet loss bursts (by better spreading the packets spreading)
+#   and sometimes provide faster file reconstruction, at the cost of memory usage.
+# Should be kept as high as possible. (considering RAM limitations)
+encoder.buffer_limit = 100_000_000 # Minimum amount of bytes the encoder will process at once before sending packets
 
 # Scanner ------------------------
+# Only increase this if you encounter issues where a file is somehow sent before it's complete.
 scanner.file_ready_delay = 1 # Seconds a file must remain unchanged before it is considered ready for transfer
 scanner.folder_polling_interval = 1 # Seconds between each folder scan for new or stable files
 
 
 # Pacer Module -------------------
 [send.pacer]
-enabled = true # Toggle to limit the sender to maintain a target speed
-target_speed = 12_500_000 # Bytes per second maximum speed
+# The pacer halts the sender between batches if a batch was sent too fast.
+# Should always be enabled to make sure the network card and the listener are not overloaded.
+enabled = true # Toggle to limit the sender to maintain a certain speed
+# The actual target speed is typically way lower than this on larger files (due to time.sleep limitations), and higher on tiny ones.
+# When setting this value, ensure you consider all other potential senders in the network.
+speed_limit = 12_500_000 # Bytes per second maximum speed
+# A higher value helps match the target speed on larger files, but may allow smaller files to be sent too fast.
+# Setting this close to payload_size ensures each individual packet is paced below the target_speed, but greatly reduces average speeds on standard files.
 batch_limit = 100_000 # Bytes allowed to be sent before the speed limit is enforced

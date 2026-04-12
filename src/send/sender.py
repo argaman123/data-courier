@@ -46,7 +46,7 @@ class Sender(Process):
         self.pacer = Pacer(self.active_senders)
         self.temp_path = Path(self.temp_folder)
 
-    def send_file(self, file: File, sock: socket.socket):
+    def send_file(self, file: File):
         k, m = calc_k_m(len(file))
         passes = math.ceil(m/k)
         chunks_amount = math.ceil(len(file) / (k * Packet.payload_size))
@@ -57,7 +57,7 @@ class Sender(Process):
             start_time = time.perf_counter()
             for packet in generate_chunks(file, pass_num):
                 size += len(packet)
-                sock.send(bytes(packet))
+                self.sock.send(bytes(packet))
                 self.pacer.wait_if_needed(len(packet))
             elapsed = time.perf_counter() - start_time
             if elapsed > 0:
@@ -72,15 +72,16 @@ class Sender(Process):
             logger.info(f"Sender for {self.folder} is running")
 
             while True:
-                self.pacer.reset()
                 file = self.queue.get()
                 path = self.temp_path / file
 
                 with self.active_senders.get_lock():
                     self.active_senders.value += 1
 
+                self.pacer.reset()
+
                 try:
-                    self.send_file(File(file, self.temp_path), self.sock)
+                    self.send_file(File(file, self.temp_path))
                     path.unlink(missing_ok=True)
                 except (OSError, ValueError, zfec.Error) as e:
                     if not path.exists():

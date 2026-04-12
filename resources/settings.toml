@@ -1,7 +1,11 @@
 [default]
-log_level = 'INFO'
+log_level = 'DEBUG'
 socket.ip = '192.168.1.2'
 socket.port = 55555
-socket.buffer_size = 256_000_000 # Maximum bytes the OS can hold for the network card
+# Changing this requires you to run a command (or to set permenentaly in a system file) and modify the OS default value.
+# A value larger than the kernel's limit is silently ignored.
+socket.buffer_size = 512_000 # Maximum bytes of kernel space for holding unprocessed packets for the socket itself
 
-payload_size = 1_400 # Bytes of file data per packet; kept under 1.5KB to prevent IP fragmentation
+# Higher values affect the chunk size (and therefore, greatly increase the padding of tiny files),
+#   and require a restart on both ends.
+payload_size = 1_400 # Bytes of file data per packet. A value under 1.5KB would help prevent IP fragmentation

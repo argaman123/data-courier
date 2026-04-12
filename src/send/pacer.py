@@ -9,7 +9,7 @@ class Pacer:
 
         if self.enabled:
             self.batch_limit = settings.pacer.batch_limit
-            self.target_speed = settings.pacer.target_speed
+            self.speed_limit = settings.pacer.speed_limit
 
             self.start_time = time.perf_counter()
             self.bytes_sent = 0
@@ -24,7 +24,7 @@ class Pacer:
         self.bytes_sent += size
         if self.bytes_sent >= self.batch_limit:
             elapsed_time = time.perf_counter() - self.start_time
-            target_batch_time = (self.bytes_sent / self.target_speed) * self.active_senders.value
+            target_batch_time = (self.bytes_sent / self.speed_limit) * self.active_senders.value
             if elapsed_time < target_batch_time:
                 time.sleep(target_batch_time - elapsed_time)
             self.reset()

@@ -62,18 +62,22 @@ class Processor(Process):
             self.pass_num = pass_num
             self.passes = passes
 
-        def start_callback(self, show = True):
+        def start_callback(self, first = True):
             def callback():
-                if show:
+                if first:
                     logger.info(f"Started sending {self.file} pass {self.pass_num + 1}/{self.passes}")
                 self.start_time = time.perf_counter()
             return callback
 
-        def complete_callback(self, size: int):
+        def complete_callback(self, size: int, final = False):
             def callback():
                 elapsed = time.perf_counter() - self.start_time
                 if elapsed > 0:
-                    logger.info(f"Sent {self.file} (pass {self.pass_num + 1}/{self.passes}) at "
+                    if final:
+                        log = logger.success
+                    else:
+                        log = logger.info
+                    log(f"Sent {self.file} (pass {self.pass_num + 1}/{self.passes}) at "
                                 f"{1 / (elapsed / size) / (1024 * 1024):.1f} MB/s")
             return callback
 
@@ -86,11 +90,11 @@ class Processor(Process):
         for pass_num in range(passes):
             size = 0
             tracker = Processor.PassTracker(file, pass_num, passes)
-            self.sender.call(tracker.start_callback(show=pass_num == 0))
+            self.sender.call(tracker.start_callback(first=pass_num == 0))
             for packet in generate_packets(file, pass_num):
                 size += len(packet)
                 self.sender.submit(bytes(packet))
-            self.sender.call(tracker.complete_callback(size))
+            self.sender.call(tracker.complete_callback(size, final=pass_num+1==passes))
 
     def run(self):
         signal.signal(signal.SIGINT, signal.SIG_IGN)

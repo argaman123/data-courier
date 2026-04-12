@@ -2,10 +2,9 @@
 input_folder = 'external/input'
 temp_folder = 'external/temp'
 
-# Sender -------------------------
 # Enabling this would make subsequent passes slightly faster on slower disks,
 #   but is somewhat negligable compared to encoding and throttling.
-sender.enable_file_caching = false # Toggle to keep file data in memory after reading it once
+processor.enable_file_caching = false # Toggle to keep file data in memory after reading it once
 
 # Encoder ------------------------
 # Higher values mean higher redundancy against missing packets but greatly degrades performance.
@@ -24,15 +23,25 @@ encoder.buffer_limit = 100_000_000 # Minimum amount of bytes the encoder will pr
 scanner.file_ready_delay = 1 # Seconds a file must remain unchanged before it is considered ready for transfer
 scanner.folder_polling_interval = 1 # Seconds between each folder scan for new or stable files
 
+# Sender -------------------------
+# Higher values allow to keep sending packets while processing the next chunks, at the cost of memory usage.
+# Should be kept as high as possible. (considering RAM limitations)
+sender.buffer_limit = 100_000_000 # Maximum size (in bytes) of processed packets waiting to be sent before halting the processor.
 
 # Pacer Module -------------------
 [send.pacer]
-# The pacer halts the sender between batches if a batch was sent too fast.
-# Should always be enabled to make sure the network card and the listener are not overloaded.
+# The pacer keeps the flow of outgoing packets maintained to a steady target speed.
+# Keep this enabled to prevent sudden packet bursts from overloading the network card or the listener.
 enabled = true # Toggle to limit the sender to maintain a certain speed
-# The actual target speed is typically way lower than this on larger files (due to time.sleep limitations), and higher on tiny ones.
-# When setting this value, ensure you consider all other potential senders in the network.
+# The absolute maximum network speed allowed and is typically lower on most file sizes.
+# Note, that the reported speed during the first pass (especially on medium files) may appear lower than this limit.
+# This is normal and reflects the idle time of encoding the initial chunk before sending begins.
+# When setting this value, ensure you consider all other potential senders instances running in the network.
 speed_limit = 12_500_000 # Bytes per second maximum speed
-# A higher value helps match the target speed on larger files, but may allow smaller files to be sent too fast.
-# Setting this close to payload_size ensures each individual packet is paced below the target_speed, but greatly reduces average speeds on standard files.
-batch_limit = 100_000 # Bytes allowed to be sent before the speed limit is enforced
+# Defines the maximum time a thread can burst packets without being interrupted by sleep calls.
+# Should be set to match the time.sleep inaccuracies on the system.
+# This setting compensates for the inaccuracy of system sleep timers, and should be set to match them. (check time.sleep speeds on your OS)
+# Higher values (~0.015) ensure faster speeds on all systems, but may allow larger bursts to be sent at once.
+# Lower values (~0.005) ensure more strictly-paced traffic but may cause the actual speed to fall below the limit if the OS timer lags.
+max_burst_time = 0.005 # Maximum time (in seconds) allowed for a continuous packet burst with no interruptions.
+

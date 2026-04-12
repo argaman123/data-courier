@@ -1,5 +1,5 @@
 [default]
-log_level = 'DEBUG'
+log_level = 'INFO'
 socket.ip = '192.168.1.2'
 socket.port = 55555
 # Changing this requires you to run a command (or to set permenentaly in a system file) and modify the OS default value.

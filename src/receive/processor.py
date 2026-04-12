@@ -53,7 +53,7 @@ class Processor(Process):
     def _threads_healthcheck(self):
         for thread in self.threads:
             if not thread.is_alive():
-                logger.critical(f"{thread} is not running, shutting down...")
+                logger.critical(f"{thread.name} is not running, shutting down...")
                 return False
         return True
 
@@ -92,8 +92,8 @@ class Processor(Process):
                     logger.info(f"Finished processing {current_file}")
                     current_file_copy = copy.copy(current_file)
                     try:
-                        self.writer.files.put_nowait(current_file_copy, current_file_copy.file_size)
+                        self.writer.files.put_nowait(current_file_copy)
                     except SizedQueue.Full:
                         logger.warning("Writer is too slow, waiting for it to catch up...")
-                        self.writer.files.put(current_file_copy, current_file_copy.file_size)
+                        self.writer.files.put(current_file_copy)
                     current_file.free_memory()

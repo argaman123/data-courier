@@ -34,7 +34,7 @@ def calc_k_m(file_size: int):
         k = math.ceil(total_packets / math.ceil(total_packets / max_k))
     return k, int(k * packets_multiplier)
 
-def generate_chunks(file: File, pass_num: int):
+def generate_packets(file: File, pass_num: int):
     chunks: list[tuple[int, list]] = []
     k, m = calc_k_m(len(file))
     chunk_size = k * Packet.payload_size

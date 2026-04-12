@@ -10,7 +10,7 @@ from threading import Thread
 
 from src.common.config import settings, logger
 from src.send.scanner import Scanner
-from src.send.sender import Sender
+from src.send.processor import Processor
 import multiprocessing as mp
 
 input_folder = settings.input_folder
@@ -39,7 +39,7 @@ def main():
 
     tasks: list[Thread | Process] = []
     for folder in queues:
-        sender = Sender(folder, queues[folder], active_senders)
+        sender = Processor(folder, queues[folder], active_senders)
         tasks.append(sender)
         sender.start()
 

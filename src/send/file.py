@@ -6,7 +6,7 @@ from src.common.config import settings
 
 
 class File:
-    caching_enabled = settings.get('sender', {}).get('enable_file_caching', False)
+    caching_enabled = settings.get('processor', {}).get('enable_file_caching', False)
 
     def __init__(self, path: str, folder: Path):
         self.path = path

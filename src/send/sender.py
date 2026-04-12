@@ -1,95 +1,111 @@
-from __future__ import annotations
-
-import math, socket, time
-import re
-import signal
-from multiprocessing import Process
-from multiprocessing.queues import Queue
+import errno
+import socket
+import time
+import threading
+from typing import Callable, TypeVar, Generic, Sized, Optional
 import multiprocessing.sharedctypes as mp_types
-from pathlib import Path
-
-import zfec
 
 from src.common.config import settings, logger
 from src.common.packet import Packet
-from src.send.encoder import generate_chunks, calc_k_m
-from src.send.file import File
-from src.send.pacer import Pacer
+import queue
 
-def to_camel_case(text):
-    s = re.sub(r"([_\-])+", " ", text)
-    s = s.title()
-    s = s.replace(" ", "")
-    return s
+T = TypeVar('T', bound=Sized)
 
+class CompletionTask:
+    def __init__(self, func: Callable[[], None]):
+        self.run = func
 
-class Sender(Process):
-    temp_folder = settings.temp_folder
+class Sender(threading.Thread, Generic[T]):
     buffer_size = settings.socket.get('buffer_size', 256_000_000)
     ip, port = settings.socket.ip, settings.socket.port
-
     sock: socket.socket
-    pacer: Pacer
-    temp_path: Path
 
-    def __init__(self, folder: str, queue: Queue[str], active_senders: 'mp_types.Synchronized'):
-        super().__init__(name=f"{to_camel_case(folder)}Sender", daemon=True)
-        self.folder = folder
-        self.queue = queue
-        self.active_senders = active_senders
+    def __init__(self, active_workers: 'mp_types.Synchronized'):
+        super().__init__(name="Sender", daemon=True)
+        self.queue: queue.Queue[T | CompletionTask] = queue.Queue(maxsize=settings.get("sender", {}).get("buffer_limit", 100_000_000) // Packet.packet_size)
+        pacer_settings = settings.get("pacer", {})
+        self.pacing_enabled = pacer_settings.get("enabled", False)
+        if self.pacing_enabled:
+            self.speed_limit = pacer_settings.speed_limit
+            self.max_burst_time = pacer_settings.get('max_burst_time', 0.015)
 
+        self.active_workers = active_workers
 
     def _setup(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self.buffer_size)
         self.sock.connect((self.ip, self.port))
-        self.pacer = Pacer(self.active_senders)
-        self.temp_path = Path(self.temp_folder)
 
-    def send_file(self, file: File):
-        k, m = calc_k_m(len(file))
-        passes = math.ceil(m/k)
-        chunks_amount = math.ceil(len(file) / (k * Packet.payload_size))
-        logger.info(f"Sending {file} ({chunks_amount} chunks of {k} packets) with {int((m-k)/m*100)}% redundancy, "
-                    f"in {passes} passes")
-        for pass_num in range(passes):
-            size = 0
-            start_time = time.perf_counter()
-            for packet in generate_chunks(file, pass_num):
-                size += len(packet)
-                self.sock.send(bytes(packet))
-                self.pacer.wait_if_needed(len(packet))
-            elapsed = time.perf_counter() - start_time
-            if elapsed > 0:
-                logger.info(f"Sent {file} (pass {pass_num + 1}/{passes}) at "
-                            f"{1 / (elapsed / size) / (1024 * 1024):.1f} MB/s")
+    def send_bytes(self, data: bytes):
+        try:
+            self.sock.send(data)
+        except OSError as e:
+            if e.errno in (errno.EBADF, errno.ENOTSOCK):
+                raise e
 
-    def run(self):
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-
+    def run(self) -> None:
         with logger.catch(message="Unexpected error occurred, shutting down..."):
             self._setup()
-            logger.info(f"Sender for {self.folder} is running")
+            mode_text = ", with no speed limit"
+            if self.pacing_enabled:
+                mode_text = f", maintaining max speed of {self.speed_limit / 1000 ** 2:.2f}MB/s"
+            logger.info(f"Sender started{mode_text}")
 
+            is_active = False
             while True:
-                file = self.queue.get()
-                path = self.temp_path / file
-
-                with self.active_senders.get_lock():
-                    self.active_senders.value += 1
-
-                self.pacer.reset()
-
                 try:
-                    self.send_file(File(file, self.temp_path))
-                    path.unlink(missing_ok=True)
-                except (OSError, ValueError, zfec.Error) as e:
-                    if not path.exists():
-                        logger.warning(f"Dropping {file} since it disappeared from {self.temp_path}")
-                    else:
-                        logger.warning(f"Error occurred while sending {file}. Re-queueing: {e}")
-                        self.queue.put(file)
-                        time.sleep(1)
-                finally:
-                    with self.active_senders.get_lock():
-                        self.active_senders.value -= 1
+                    task = self.queue.get(timeout=1.0)
+                except queue.Empty:
+                    if self.pacing_enabled and is_active:
+                        with self.active_workers.get_lock():
+                            self.active_workers.value -= 1
+                        is_active = False
+                    continue
+
+                if isinstance(task, CompletionTask):
+                    task.run()
+                    continue
+                else:
+                    packet = task
+
+                if not self.pacing_enabled:
+                    self.send_bytes(packet)
+                    continue
+
+                if not is_active:
+                    with self.active_workers.get_lock():
+                        self.active_workers.value += 1
+                    is_active = True
+                    time_credit = 0.0
+                    last_time = time.perf_counter()
+
+                now = time.perf_counter()
+                time_credit += now - last_time
+                last_time = now
+
+                current_limit = self.speed_limit / max(1, self.active_workers.value)
+                time_cost = len(packet) / current_limit
+
+                if time_credit < time_cost:
+                    time.sleep(time_cost - time_credit)
+
+                self.send_bytes(packet)
+
+                time_credit -= time_cost
+                if time_credit > self.max_burst_time:
+                    time_credit = self.max_burst_time
+
+    def _submit(self, payload: T | CompletionTask):
+        while True:
+            try:
+                self.queue.put(payload, timeout=1.0)
+                return
+            except queue.Full:
+                if not self.is_alive():
+                    raise RuntimeError(f"{self} crashed during file sending")
+
+    def submit(self, payload: T):
+        self._submit(payload)
+
+    def call(self, callback: Callable[[], None]):
+        self._submit(CompletionTask(callback))

@@ -9,7 +9,7 @@ from multiprocessing.queues import Queue
 
 from src.common.config import settings, logger
 from src.common.packet import Packet
-from src.receive.listener import Listener
+from src.receive.receiver import Receiver
 from src.receive.processor import Processor
 
 shm_name = settings.get('shm', {}).get('name', 'courier_send_shm')
@@ -40,13 +40,13 @@ def main():
 
     shm = _create_shm()
     # By reducing one spot I'm making sure I would never overlap the bytearray,
-    # even when the listener is too fast compared to the processor
+    # even when the Receiver is too fast for the Processor
     offset_queue: Queue[tuple[int, int]] = \
         (mp.Queue(
             maxsize=int(shm.size // Packet.packet_size) - 1))
     processes = [
         Processor(offset_queue, shm.name),
-        Listener(offset_queue, shm.name)
+        Receiver(offset_queue, shm.name)
     ]
     shutdown_event = threading.Event()
     signal.signal(signal.SIGTERM, handle_shutdown)

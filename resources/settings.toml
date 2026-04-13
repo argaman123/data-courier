@@ -1,10 +1,7 @@
 [default]
 log_level = 'INFO'
-socket.ip = '192.168.1.2'
-socket.port = 55555
-# Changing this requires you to run a command (or to set permenentaly in a system file) and modify the OS default value.
-# A value larger than the kernel's limit is silently ignored.
-socket.buffer_size = 512_000 # Maximum bytes of kernel space for holding unprocessed packets for the socket itself
+ip = '192.168.1.2'
+port = 55555
 
 # Higher values affect the chunk size (and therefore, greatly increase the padding of tiny files),
 #   and require a restart on both ends.

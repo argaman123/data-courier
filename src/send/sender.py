@@ -16,8 +16,8 @@ class CompletionTask:
         self.run = func
 
 class Sender(threading.Thread, Generic[T]):
-    buffer_size = settings.socket.get('buffer_size', 256_000_000)
-    ip, port = settings.socket.ip, settings.socket.port
+    ip, port = settings.ip, settings.port
+    buffer_size = settings.socket.get('buffer_size', 2_000_000)
     sock: socket.socket
 
     def __init__(self, active_workers: 'mp_types.Synchronized'):

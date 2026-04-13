@@ -1,16 +1,21 @@
 [receive]
 output_folder = 'external/output'
 
+# Changing this sometimes requires you to run a command (or to set permenentaly in a system file) and modify the OS default value.
+# A value larger than the kernel's limit is silently ignored.
+# Can help absorb network spikes and prevents packet loss, so should be kept as high as possible. (considering RAM limitations)
+socket.buffer_size = 256_000_000 # Maximum kernel memory allocated to hold incoming packets before the Receiver reads them.
+
 # Processor ----------------------
 shm.name = 'courier_send_shm'
-# Higher values allow the processor to handle heavy incoming bursts without halting the listener.
-# This absorbs sudden network spikes but cannot compensate for a sender that is consistently too fast for the processor.
-shm.size = 1_000_000_000 # Size of the shared memory pool used for storing unprocessed packets before halting the listener
+# Higher values allow the Processor to handle heavy incoming bursts without halting the Receiver.
+# This absorbs sudden network spikes but cannot compensate for a Sender that is consistently too fast for the Processor.
+shm.size = 1_000_000_000 # Size of the shared memory pool used for storing unprocessed packets before halting the Receiver
 
 # Writer -------------------------
-# Higher values allow the writer more time to catch up with the processor, at the cost of (potentialy) increased memory usage.
+# Higher values allow the Writer more time to catch up with the Processor, at the cost of (potentialy) increased memory usage.
 # This only provides better tolerance against temporary disk freezes, since generely disks are fast enough.
-writer.buffer_limit = 10_000_000_000 # Minimum size of complete files waiting in queue before halting the processor
+writer.buffer_limit = 10_000_000_000 # Minimum size of complete files waiting in queue before halting the Processor
 
 # Cleaner ------------------------
 # Higher values allow delayed packets more time to arrive and complete a file.
@@ -24,4 +29,4 @@ host = "192.168.1.2"
 port = 5672
 exchange_name = "courier"
 routing_key_prefix = "courier"
-reconnect_delay = 5
+reconnect_delay = 5 # In seconds

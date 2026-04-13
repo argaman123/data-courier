@@ -2,6 +2,11 @@
 input_folder = 'external/input'
 temp_folder = 'external/temp'
 
+# Changing this sometimes requires you to run a command (or to set permenentaly in a system file) and modify the OS default value.
+# A value larger than the kernel's limit is silently ignored.
+# Can help prevent overwhelming the router with data spikes, so should be kept intentionally small.
+socket.buffer_size = 2_000_000 # Maximum kernel memory allocated to queue outgoing packets before hitting the network card
+
 # Enabling this would make subsequent passes slightly faster on slower disks,
 #   but is somewhat negligable compared to encoding and throttling.
 processor.enable_file_caching = false # Toggle to keep file data in memory after reading it once
@@ -16,7 +21,7 @@ encoder.enlarge_tiny_files = true # Toggle to pad small files to a minimum size 
 # Higher values maximize resilience against packet loss bursts (by better spreading the packets spreading)
 #   and sometimes provide faster file reconstruction, at the cost of memory usage.
 # Should be kept as high as possible. (considering RAM limitations)
-encoder.buffer_limit = 100_000_000 # Minimum amount of bytes the encoder will process at once before sending packets
+encoder.buffer_limit = 100_000_000 # Minimum amount of bytes the Encoder will process at once before sending packets
 
 # Scanner ------------------------
 # Only increase this if you encounter issues where a file is somehow sent before it's complete.
@@ -26,17 +31,17 @@ scanner.folder_polling_interval = 1 # Seconds between each folder scan for new o
 # Sender -------------------------
 # Higher values allow to keep sending packets while processing the next chunks, at the cost of memory usage.
 # Should be kept as high as possible. (considering RAM limitations)
-sender.buffer_limit = 100_000_000 # Maximum size (in bytes) of processed packets waiting to be sent before halting the processor.
+sender.buffer_limit = 100_000_000 # Maximum size (in bytes) of processed packets waiting to be sent before halting the Processor.
 
 # Pacer Module -------------------
 [send.pacer]
 # The pacer keeps the flow of outgoing packets maintained to a steady target speed.
-# Keep this enabled to prevent sudden packet bursts from overloading the network card or the listener.
-enabled = true # Toggle to limit the sender to maintain a certain speed
+# Keep this enabled to prevent sudden packet bursts from overloading the network card or the Receiver.
+enabled = true # Toggle to limit the Sender to maintain a certain speed
 # The absolute maximum network speed allowed and is typically lower on most file sizes.
 # Note, that the reported speed during the first pass (especially on medium files) may appear lower than this limit.
 # This is normal and reflects the idle time of encoding the initial chunk before sending begins.
-# When setting this value, ensure you consider all other potential senders instances running in the network.
+# When setting this value, ensure you consider all other potential Sender instances running separately in the network.
 speed_limit = 12_500_000 # Bytes per second maximum speed
 # Defines the maximum time a thread can burst packets without being interrupted by sleep calls.
 # Should be set to match the time.sleep inaccuracies on the system.

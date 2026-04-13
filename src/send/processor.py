@@ -107,7 +107,7 @@ class Processor(Process):
                 try:
                     file = self.queue.get(timeout=1.0)
                 except queue.Empty:
-                    # Checking for dying threads only when the processor is not under heavy load
+                    # Checking for dying threads only when the Processor is not under heavy load
                     if not self._threads_healthcheck():
                         return
                     continue

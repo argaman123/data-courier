@@ -9,16 +9,16 @@ from src.common.config import settings, logger
 from src.common.packet import Packet
 
 
-class Listener(Process):
+class Receiver(Process):
+    ip, port = settings.ip, settings.port
     buffer_size = settings.socket.get('buffer_size', 256_000_000)
-    ip, port = settings.socket.ip, settings.socket.port
 
     sock: socket.socket
     shm: shared_memory.SharedMemory
     buffer: memoryview
 
     def __init__(self, offset_queue: Queue[tuple[int, int]], shm_name: str):
-        super().__init__(name=f"Listener", daemon=True)
+        super().__init__(name=f"Receiver", daemon=True)
         self.offset_queue = offset_queue
         self.shm_name = shm_name
 
@@ -38,7 +38,7 @@ class Listener(Process):
 
         with logger.catch(message="Unexpected error occurred, shutting down..."):
             self._setup()
-            logger.info(f"Listener is running on {self.sock.getsockname()}")
+            logger.info(f"Receiver is running on {self.sock.getsockname()}")
 
             offset = 0
             try:

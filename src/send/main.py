@@ -39,9 +39,9 @@ def main():
 
     tasks: list[Thread | Process] = []
     for folder in queues:
-        sender = Processor(folder, queues[folder], active_senders)
-        tasks.append(sender)
-        sender.start()
+        processor = Processor(folder, queues[folder], active_senders)
+        tasks.append(processor)
+        processor.start()
 
     scanner = Scanner(queues)
     tasks.append(scanner)

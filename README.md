@@ -12,41 +12,82 @@ Reliable one-way file transfer through a data diode.
 
 </div>
 
-A data diode lets traffic flow in one direction only, so the receiving side can never acknowledge
-a packet or ask for a resend. Data Courier makes that link reliable on its own: drop files into a
-folder on one side, and they appear, whole, in the matching folder on the other.
+Data Courier moves files across a one-way link without losing any. Drop a file into a folder on the
+sending side and it appears, whole, in the matching folder on the receiving side: as fast as the
+link allows, recovering lost packets on its own, with every part of the transfer configurable.
 
-![The pipeline, from input folders to output folders](Pipeline.png)
+## Why use it
 
-## What went into it
-
-- **Forward error correction**: every chunk is Reed-Solomon encoded (zfec), so any `k` of its `m` packets rebuild it.
-- **Per-file coding**: `k` and `m` are chosen for each file's size, and travel inside every packet.
-- **Loss-burst spreading**: packets are interleaved across many chunks, so a burst of loss costs each chunk only a little.
-- **Tiny-file padding**: files smaller than one chunk are padded so they survive loss like large ones.
-- **Multiple passes**: redundancy goes out in passes, so the first full copy arrives as early as possible.
-- **Steady pacing**: a time-credit pacer holds the link at a set speed without bursts.
-- **Fair sharing**: each input folder sends in its own process, and active senders split the speed limit evenly.
-- **Safe pickup**: a file is taken only after it stops changing and is unlocked, then moved aside, so a restart resumes it.
-- **Zero-copy receiving**: packets land straight in a shared-memory ring buffer, read by a separate process.
-- **Bounded memory**: byte-sized queues between every stage apply back-pressure instead of growing without limit.
-- **Self-cleaning**: partial files that stop receiving packets are dropped after a timeout and reported.
-- **RabbitMQ hand-off**: optionally publishes each saved file's path, routed by its folder.
-- **Fails loudly**: a watchdog shuts everything down cleanly if any process or thread dies.
+- **Reliable**: error correction rebuilds lost packets on arrival, so nothing ever needs a resend.
+- **Fast and steady**: sends at the speed you set, evenly, and delivers a first full copy as early as possible.
+- **Configurable**: redundancy, speed, packet size and timings are all settings.
+- **Many channels**: every folder is its own channel, sending in parallel and sharing the bandwidth fairly.
+- **Handles the edge cases**: half-written files, restarts, tiny files, incomplete deliveries and crashes.
+- **Light**: bounded memory, cleans up after itself, runs anywhere Docker does.
+- **Easy to connect**: optionally announces every received file on RabbitMQ.
 
 ## How it works
 
-**Send side**
-1. The **Scanner** polls each subfolder of the input folder and moves every stable file to the temp folder.
-2. A **Processor** per subfolder splits the file into chunks, encodes them and orders the packets.
-3. The **Sender** paces the packets out over UDP.
+```mermaid
+flowchart TB
+    subgraph sendMachine ["Send side"]
+        input[("Input folders<br>one per channel")]
+        temp[("Temp folder")]
+        subgraph mainProcess ["Main process"]
+            scanner["<b>Scanner</b><br>picks up finished files"]
+        end
+        subgraph sendProcess ["Processor process ×N"]
+            sendProcessor["<b>Processor</b><br>turns files into packets"]
+            sender["<b>Sender</b><br>paces the packets out"]
+        end
+        encoder(["<b>Encoder</b><br>generates FEC packets"])
+        file(["<b>File</b><br>buffers the bytes and header"])
+    end
 
-**Receive side**
-1. The **Receiver** writes incoming packets into shared memory.
-2. The **Processor** collects packets per file and decodes each chunk once `k` packets arrive.
-3. The **Writer** saves the finished file into the matching output subfolder, keeping its name.
+    subgraph receiveMachine ["Receive side"]
+        subgraph receiverProcess ["Receiver process"]
+            receiver["<b>Receiver</b><br>listens for packets"]
+        end
+        subgraph receiveProcess ["Processor process"]
+            receiveProcessor["<b>Processor</b><br>collects packets per file"]
+            cleaner["<b>Cleaner</b><br>drops stale partial files"]
+            writer["<b>Writer</b><br>saves complete files"]
+            rabbitmq["<b>RabbitMQ</b><br>publishes saved paths"]
+        end
+        partialFile(["<b>PartialFile</b><br>decodes FEC packets"])
+        output[("Output folders<br>one per channel")]
+    end
 
-Each file's name travels inside its own data, so no separate control packets are needed.
+    input -. stable files .-> scanner
+    scanner -. moves .-> temp
+    scanner -- file names --> sendProcessor
+    sendProcessor -- uses --> encoder
+    encoder -- reads --> file
+    temp -. file bytes .-> file
+    sendProcessor -- packets --> sender
+    sender == UDP through the diode ==> receiver
+    receiver -- shared memory --> receiveProcessor
+    receiveProcessor -- fills --> partialFile
+    cleaner -- expires --> partialFile
+    receiveProcessor -- complete files --> writer
+    writer -. writes .-> output
+    writer -- saved paths --> rabbitmq
+
+    classDef thread fill:#1ba1e2,stroke:#1ba1e2,color:#fff
+    classDef data fill:#fa6800,stroke:#fa6800,color:#fff
+    classDef folder fill:#64748b,stroke:#64748b,color:#fff
+    classDef process fill:#6a00ff1a,stroke:#6a00ff,stroke-width:2px
+    classDef side fill:none,stroke:#888,stroke-dasharray:6 4
+    class scanner,sendProcessor,sender,receiver,receiveProcessor,cleaner,writer,rabbitmq thread
+    class encoder,file,partialFile data
+    class input,temp,output folder
+    class mainProcess,sendProcess,receiverProcess,receiveProcess process
+    class sendMachine,receiveMachine side
+```
+
+Purple boxes are processes, blue boxes the threads inside them, orange pills helper classes and
+gray cylinders folders. Dotted arrows touch the disk; the thick arrow is the only link between the
+two sides.
 
 ## Running it
 
@@ -76,14 +117,14 @@ a `COURIER_` environment variable.
 | Setting | Side | What it controls |
 |---|---|---|
 | `ip`, `port` | both | The receiver's address |
-| `payload_size` | both | File bytes per packet (under ~1.5 KB avoids IP fragmentation) |
-| `encoder.packets_multiplier` | send | Packets sent per data packet: `2` is 50% redundancy |
-| `pacer.speed_limit` | send | Total bytes per second across all senders |
+| `payload_size` | both | File bytes per packet |
+| `encoder.packets_multiplier` | send | Redundancy: `2` sends twice the data |
+| `pacer.speed_limit` | send | Total bytes per second across all channels |
 | `scanner.file_ready_delay` | send | Seconds a file must stay unchanged before it is sent |
-| `socket.buffer_size` | both | Kernel socket buffer: small on send, as large as possible on receive |
-| `shm.size` | receive | Shared memory for packets waiting to be processed |
+| `socket.buffer_size` | both | Kernel socket buffer size |
+| `shm.size` | receive | Memory for packets waiting to be processed |
 | `cleaner.partial_file_expiry` | receive | Seconds before an incomplete file is dropped |
-| `rabbitmq.*` | receive | Publishing saved file paths |
+| `rabbitmq.*` | receive | Where to announce received files |
 
 Large socket buffers need the OS limit raised too (on Linux, `net.core.rmem_max` and
-`net.core.wmem_max`); a value above it is silently capped.
+`net.core.wmem_max`).

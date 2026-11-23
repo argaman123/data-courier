@@ -12,7 +12,7 @@ Reliable one-way file transfer through a data diode.
 
 </div>
 
-Data Courier moves files across a one-way link without losing any. Drop a file into a folder on the
+Data Courier moves files across a one-way link reliably. Drop a file into a folder on the
 sending side and it appears, whole, in the matching folder on the receiving side: as fast as the
 link allows, recovering lost packets on its own, with every part of the transfer configurable.
 
@@ -28,66 +28,7 @@ link allows, recovering lost packets on its own, with every part of the transfer
 
 ## How it works
 
-```mermaid
-flowchart TB
-    subgraph sendMachine ["Send side"]
-        input[("Input folders<br>one per channel")]
-        temp[("Temp folder")]
-        subgraph mainProcess ["Main process"]
-            scanner["<b>Scanner</b><br>picks up finished files"]
-        end
-        subgraph sendProcess ["Processor process ×N"]
-            sendProcessor["<b>Processor</b><br>turns files into packets"]
-            sender["<b>Sender</b><br>paces the packets out"]
-        end
-        encoder(["<b>Encoder</b><br>generates FEC packets"])
-        file(["<b>File</b><br>buffers the bytes and header"])
-    end
-
-    subgraph receiveMachine ["Receive side"]
-        subgraph receiverProcess ["Receiver process"]
-            receiver["<b>Receiver</b><br>listens for packets"]
-        end
-        subgraph receiveProcess ["Processor process"]
-            receiveProcessor["<b>Processor</b><br>collects packets per file"]
-            cleaner["<b>Cleaner</b><br>drops stale partial files"]
-            writer["<b>Writer</b><br>saves complete files"]
-            rabbitmq["<b>RabbitMQ</b><br>publishes saved paths"]
-        end
-        partialFile(["<b>PartialFile</b><br>decodes FEC packets"])
-        output[("Output folders<br>one per channel")]
-    end
-
-    input -. stable files .-> scanner
-    scanner -. moves .-> temp
-    scanner -- file names --> sendProcessor
-    sendProcessor -- uses --> encoder
-    encoder -- reads --> file
-    temp -. file bytes .-> file
-    sendProcessor -- packets --> sender
-    sender == UDP through the diode ==> receiver
-    receiver -- shared memory --> receiveProcessor
-    receiveProcessor -- fills --> partialFile
-    cleaner -- expires --> partialFile
-    receiveProcessor -- complete files --> writer
-    writer -. writes .-> output
-    writer -- saved paths --> rabbitmq
-
-    classDef thread fill:#1ba1e2,stroke:#1ba1e2,color:#fff
-    classDef data fill:#fa6800,stroke:#fa6800,color:#fff
-    classDef folder fill:#64748b,stroke:#64748b,color:#fff
-    classDef process fill:#6a00ff1a,stroke:#6a00ff,stroke-width:2px
-    classDef side fill:none,stroke:#888,stroke-dasharray:6 4
-    class scanner,sendProcessor,sender,receiver,receiveProcessor,cleaner,writer,rabbitmq thread
-    class encoder,file,partialFile data
-    class input,temp,output folder
-    class mainProcess,sendProcess,receiverProcess,receiveProcess process
-    class sendMachine,receiveMachine side
-```
-
-Purple boxes are processes, blue boxes the threads inside them, orange pills helper classes and
-gray cylinders folders. Dotted arrows touch the disk; the thick arrow is the only link between the
-two sides.
+![The pipeline: folders, processes, threads and classes on each side of the diode](pipeline.svg)
 
 ## Running it
 

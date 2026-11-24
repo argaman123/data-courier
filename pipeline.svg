@@ -36,14 +36,14 @@
 <rect class="frame back" x="225" y="252" width="205" height="200" rx="10"/>
 <rect class="frame back" x="220" y="257" width="205" height="200" rx="10"/>
 <rect class="frame" x="215" y="262" width="205" height="200" rx="10"/>
-<text class="title" x="227" y="279">Processor process, per channel</text>
+<text class="title" x="227" y="279">Processor process, per folder</text>
 <path d="M40,82 V34 Q40,30 44,30 H78 L86,38 H156 Q160,38 160,42 V82 Q160,86 156,86 H44 Q40,86 40,82 Z" fill="#64748b"/>
 <text class="on" x="100.0" y="66.0" text-anchor="middle"><tspan class="name">Temp folder</tspan></text>
 <path d="M258,74 V26 Q258,22 262,22 H296 L304,30 H384 Q388,30 388,34 V74 Q388,78 384,78 H262 Q258,78 258,74 Z" fill="#64748b" opacity="0.35"/>
 <path d="M254,78 V30 Q254,26 258,26 H292 L300,34 H380 Q384,34 384,38 V78 Q384,82 380,82 H258 Q254,82 254,78 Z" fill="#64748b" opacity="0.6"/>
 <path d="M250,82 V34 Q250,30 254,30 H288 L296,38 H376 Q380,38 380,42 V82 Q380,86 376,86 H254 Q250,86 250,82 Z" fill="#64748b"/>
 <text class="on" x="315.0" y="58.0" text-anchor="middle"><tspan class="name">Input folders</tspan></text>
-<text class="on desc" x="315.0" y="74.0" text-anchor="middle">one per channel</text>
+<text class="on desc" x="315.0" y="74.0" text-anchor="middle">any number</text>
 <rect x="235" y="150" width="165" height="56" rx="6" fill="#1ba1e2"/>
 <text class="on" x="317.5" y="174.0" text-anchor="middle"><tspan class="name">Scanner</tspan></text>
 <text class="on desc" x="317.5" y="190.0" text-anchor="middle">picks up finished files</text>
@@ -82,7 +82,7 @@
 <path d="M694,78 V30 Q694,26 698,26 H732 L740,34 H830 Q834,34 834,38 V78 Q834,82 830,82 H698 Q694,82 694,78 Z" fill="#64748b" opacity="0.6"/>
 <path d="M690,82 V34 Q690,30 694,30 H728 L736,38 H826 Q830,38 830,42 V82 Q830,86 826,86 H694 Q690,86 690,82 Z" fill="#64748b"/>
 <text class="on" x="760.0" y="58.0" text-anchor="middle"><tspan class="name">Output folders</tspan></text>
-<text class="on desc" x="760.0" y="74.0" text-anchor="middle">one per channel</text>
+<text class="on desc" x="760.0" y="74.0" text-anchor="middle">mirror the inputs</text>
 <rect x="690" y="150" width="140" height="56" rx="6" fill="#1ba1e2"/>
 <text class="on" x="760.0" y="174.0" text-anchor="middle"><tspan class="name">Writer</tspan></text>
 <text class="on desc" x="760.0" y="190.0" text-anchor="middle">saves complete files</text>
